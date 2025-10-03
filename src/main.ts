@@ -256,12 +256,19 @@ ipcMain.handle('run-blink-login', async (event) => {
 
 ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey: string, provider: string) => {
   try {
+    console.log('[update-agent-api-key] Project path:', projectPath);
+    console.log('[update-agent-api-key] Provider:', provider);
+    console.log('[update-agent-api-key] API key length:', apiKey.length);
+    
     const envPath = path.join(projectPath, '.env.local');
+    console.log('[update-agent-api-key] Env path:', envPath);
+    
     let envContent = '';
     try {
       envContent = await fs.readFile(envPath, 'utf-8');
+      console.log('[update-agent-api-key] Existing env content:', envContent);
     } catch {
-      // File doesn't exist, create new
+      console.log('[update-agent-api-key] No existing .env.local file');
     }
     
     let envKey: string;
@@ -315,7 +322,9 @@ ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey
       envContent += `\n${envLine}\n`;
     }
     
+    console.log('[update-agent-api-key] Writing env file with content:', envContent);
     await fs.writeFile(envPath, envContent, 'utf-8');
+    console.log('[update-agent-api-key] Env file written successfully');
     
     return { success: true };
   } catch (error: any) {
