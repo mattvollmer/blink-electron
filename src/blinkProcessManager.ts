@@ -22,68 +22,81 @@ class BlinkProcessManager {
     }
 
     return new Promise((resolve, reject) => {
-      // Run `blink start` in the project directory
-      const blinkProcess = spawn('blink', ['start', '--port', port.toString()], {
+      // First, build the project
+      const buildProcess = spawn('blink', ['build'], {
         cwd: projectPath,
-        env: { ...process.env },
         shell: true,
       });
 
-      let startupError = '';
-
-      blinkProcess.stdout?.on('data', (data) => {
-        console.log(`[${projectId}] stdout:`, data.toString());
-        // Send logs to renderer
-        this.mainWindow?.webContents.send('blink:log', {
-          projectId,
-          level: 'info',
-          message: data.toString(),
-        });
-      });
-
-      blinkProcess.stderr?.on('data', (data) => {
-        const message = data.toString();
-        console.error(`[${projectId}] stderr:`, message);
-        startupError += message;
-        
-        this.mainWindow?.webContents.send('blink:log', {
-          projectId,
-          level: 'error',
-          message,
-        });
-      });
-
-      blinkProcess.on('error', (error) => {
-        console.error(`[${projectId}] Failed to start:`, error);
-        this.processes.delete(projectId);
-        reject(error);
-      });
-
-      blinkProcess.on('exit', (code) => {
-        console.log(`[${projectId}] Process exited with code ${code}`);
-        this.processes.delete(projectId);
-        
-        this.mainWindow?.webContents.send('blink:process-exit', {
-          projectId,
-          code,
-        });
-      });
-
-      // Store the process
-      this.processes.set(projectId, {
-        process: blinkProcess,
-        port,
-        projectPath,
-      });
-
-      // Give it a moment to start up
-      setTimeout(() => {
-        if (this.processes.has(projectId)) {
-          resolve();
-        } else {
-          reject(new Error(`Failed to start project: ${startupError}`));
+      buildProcess.on('close', (code) => {
+        if (code !== 0) {
+          reject(new Error('Failed to build project'));
+          return;
         }
-      }, 2000);
+
+        // Run the built agent with custom port via environment variable
+        const blinkProcess = spawn('node', ['.blink/build/agent.js'], {
+          cwd: projectPath,
+          env: { ...process.env, PORT: port.toString() },
+          shell: true,
+        });
+
+        let startupError = '';
+
+        blinkProcess.stdout?.on('data', (data) => {
+          console.log(`[${projectId}] stdout:`, data.toString());
+          // Send logs to renderer
+          this.mainWindow?.webContents.send('blink:log', {
+            projectId,
+            level: 'info',
+            message: data.toString(),
+          });
+        });
+
+        blinkProcess.stderr?.on('data', (data) => {
+          const message = data.toString();
+          console.error(`[${projectId}] stderr:`, message);
+          startupError += message;
+          
+          this.mainWindow?.webContents.send('blink:log', {
+            projectId,
+            level: 'error',
+            message,
+          });
+        });
+
+        blinkProcess.on('error', (error) => {
+          console.error(`[${projectId}] Failed to start:`, error);
+          this.processes.delete(projectId);
+          reject(error);
+        });
+
+        blinkProcess.on('exit', (code) => {
+          console.log(`[${projectId}] Process exited with code ${code}`);
+          this.processes.delete(projectId);
+          
+          this.mainWindow?.webContents.send('blink:process-exit', {
+            projectId,
+            code,
+          });
+        });
+
+        // Store the process
+        this.processes.set(projectId, {
+          process: blinkProcess,
+          port,
+          projectPath,
+        });
+
+        // Give it a moment to start up
+        setTimeout(() => {
+          if (this.processes.has(projectId)) {
+            resolve();
+          } else {
+            reject(new Error(`Failed to start project: ${startupError}`));
+          }
+        }, 2000);
+      });
     });
   }
 
