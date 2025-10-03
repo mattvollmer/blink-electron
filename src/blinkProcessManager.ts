@@ -148,13 +148,11 @@ class BlinkProcessManager {
   }
 
   stopProject(projectId: string): void {
-    const blinkProcess = this.processes.get(projectId);
-    if (!blinkProcess) {
-      return;
+    const process = this.processes.get(projectId);
+    if (process) {
+      process.process.kill();
+      this.processes.delete(projectId);
     }
-
-    blinkProcess.process.kill('SIGTERM');
-    this.processes.delete(projectId);
   }
 
   stopAll(): void {
@@ -169,6 +167,17 @@ class BlinkProcessManager {
 
   getPort(projectId: string): number | undefined {
     return this.processes.get(projectId)?.port;
+  }
+
+  getProjectInfo(projectId: string): { projectPath: string; port: number } | null {
+    const process = this.processes.get(projectId);
+    if (!process) {
+      return null;
+    }
+    return {
+      projectPath: process.projectPath,
+      port: process.port,
+    };
   }
 }
 

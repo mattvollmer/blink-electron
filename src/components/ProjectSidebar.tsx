@@ -12,6 +12,7 @@ export const ProjectSidebar: React.FC = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
   const [authProjectPath, setAuthProjectPath] = useState<string>('');
+  const [authProjectId, setAuthProjectId] = useState<string>('');
 
   // Listen for authentication errors from Blink processes
   useEffect(() => {
@@ -20,6 +21,7 @@ export const ProjectSidebar: React.FC = () => {
         const project = projects.find(p => p.id === data.projectId);
         if (project) {
           setAuthProjectPath(project.path);
+          setAuthProjectId(project.id);
           setShowAuthDialog(true);
           updateProject(data.projectId, { status: 'error' });
         }
@@ -91,6 +93,20 @@ export const ProjectSidebar: React.FC = () => {
   const handleDeleteProject = (projectId: string) => {
     if (confirm('Are you sure you want to remove this project?')) {
       removeProject(projectId);
+    }
+  };
+
+  const handleAuthDialogClose = async (saved: boolean) => {
+    setShowAuthDialog(false);
+    if (saved && authProjectId) {
+      // Rebuild and restart the project
+      toast.loading('Rebuilding project...');
+      const result = await window.electronAPI.rebuildProject(authProjectId);
+      if (result.success) {
+        toast.success('Project rebuilt and restarted!');
+      } else {
+        toast.error(`Failed to rebuild: ${result.error}`);
+      }
     }
   };
 
@@ -187,6 +203,8 @@ export const ProjectSidebar: React.FC = () => {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         projectPath={authProjectPath}
+        projectId={authProjectId}
+        onClose={handleAuthDialogClose}
       />
     </div>
   );

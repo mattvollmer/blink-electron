@@ -16,12 +16,16 @@ interface AuthRequiredDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectPath: string;
+  projectId: string;
+  onClose: (saved: boolean) => void;
 }
 
 export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
   open,
   onOpenChange,
   projectPath,
+  projectId,
+  onClose,
 }) => {
   const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,9 +40,8 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
     try {
       const result = await window.electronAPI.updateAgentApiKey(projectPath, apiKey, 'blink');
       if (result.success) {
-        toast.success('API key saved! Restarting project...');
-        onOpenChange(false);
-        // Trigger project restart
+        toast.success('API key saved!');
+        onClose(true); // Trigger rebuild
       } else {
         toast.error(`Failed to save API key: ${result.error}`);
       }
