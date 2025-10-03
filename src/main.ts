@@ -18,31 +18,12 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: false, // Disable CORS for localhost development
     },
   });
 
   // Set the main window for process manager
   blinkProcessManager.setMainWindow(mainWindow);
-
-  // Add CORS headers for localhost Blink agents
-  const session = mainWindow.webContents.session;
-  
-  // Handle outgoing requests
-  session.webRequest.onBeforeSendHeaders({ urls: ['http://localhost:3000/*', 'http://localhost:3001/*', 'http://localhost:3002/*', 'http://localhost:3003/*', 'http://localhost:3004/*', 'http://localhost:3005/*', 'http://localhost:3006/*', 'http://localhost:3007/*', 'http://localhost:3008/*', 'http://localhost:3009/*'] }, (details, callback) => {
-    callback({ requestHeaders: details.requestHeaders });
-  });
-  
-  // Handle incoming responses - add CORS headers
-  session.webRequest.onHeadersReceived({ urls: ['http://localhost:3000/*', 'http://localhost:3001/*', 'http://localhost:3002/*', 'http://localhost:3003/*', 'http://localhost:3004/*', 'http://localhost:3005/*', 'http://localhost:3006/*', 'http://localhost:3007/*', 'http://localhost:3008/*', 'http://localhost:3009/*'] }, (details, callback) => {
-    const responseHeaders = details.responseHeaders || {};
-    
-    responseHeaders['Access-Control-Allow-Origin'] = ['*'];
-    responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH'];
-    responseHeaders['Access-Control-Allow-Headers'] = ['Content-Type, Authorization, Accept'];
-    responseHeaders['Access-Control-Max-Age'] = ['86400'];
-    
-    callback({ responseHeaders });
-  });
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
