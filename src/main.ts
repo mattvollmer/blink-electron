@@ -222,13 +222,20 @@ ipcMain.handle('run-blink-login', async (event) => {
         shell.openExternal(authUrl);
         console.log('[Blink Auth] Server listening on http://localhost:8888');
         console.log('[Blink Auth] Opening:', authUrl);
+        console.log('[Blink Auth] Waiting for callback...');
       });
       
-      // Timeout after 5 minutes
+      // Timeout after 2 minutes
       setTimeout(() => {
-        server.close();
-        resolve({ success: false, error: 'Authentication timeout' });
-      }, 5 * 60 * 1000);
+        if (server.listening) {
+          console.log('[Blink Auth] Timeout - closing server');
+          server.close();
+          resolve({ 
+            success: false, 
+            error: 'Authentication timeout. Please try again and make sure to click "Authorize" on the blink.so page.' 
+          });
+        }
+      }, 2 * 60 * 1000);
     });
   } catch (error: any) {
     return { success: false, error: error.message };
