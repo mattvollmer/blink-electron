@@ -19,7 +19,7 @@ A beautiful Electron desktop app for managing and chatting with Blink AI agents.
 
 - **Node.js 20+**
 - **Blink CLI**: `npm install -g blink`
-- At least one Blink project (`blink init`)
+- **No project setup needed!** The app can initialize projects for you.
 
 ## Quick Start
 
@@ -42,8 +42,12 @@ npm start
 ### 1. Add a Project
 
 1. Click "Add Project" in the sidebar
-2. Select a directory containing a Blink project (`agent.ts` file)
-3. Project appears in the sidebar
+2. Select **any directory** (empty or existing)
+3. If it's not a Blink project, the app will ask if you want to initialize it
+4. Click "OK" and the app runs `blink init` for you automatically
+5. Project appears in the sidebar - ready to use!
+
+**No terminal commands needed!** The app handles everything.
 
 ### 2. Start Chatting
 
