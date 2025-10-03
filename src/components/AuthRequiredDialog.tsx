@@ -55,6 +55,24 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
     onOpenChange(false);
   };
 
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Logging in to Blink...</DialogTitle>
+            <DialogDescription className="text-base leading-relaxed pt-2">
+              A browser window should open shortly.
+              <br />
+              <br />
+              Complete the authentication in your browser, then this dialog will close automatically.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
