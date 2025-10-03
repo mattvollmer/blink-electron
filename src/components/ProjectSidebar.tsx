@@ -1,13 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import { Button } from './ui/button';
 import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
 import { InitProjectDialog } from './InitProjectDialog';
+import { AuthRequiredDialog } from './AuthRequiredDialog';
 
 export const ProjectSidebar: React.FC = () => {
   const { projects, currentProjectId, setCurrentProject, addProject, removeProject, updateProject } = useProjectStore();
   const [showInitDialog, setShowInitDialog] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
+  const [authProjectPath, setAuthProjectPath] = useState<string>('');
+
+  // Listen for authentication errors from Blink processes
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onBlinkLog((data) => {
+      if (data.message.includes('You must be authenticated') || data.message.includes('blink login')) {
+        const project = projects.find(p => p.id === data.projectId);
+        if (project) {
+          setAuthProjectPath(project.path);
+          setShowAuthDialog(true);
+          updateProject(data.projectId, { status: 'error' });
+        }
+      }
+    });
+    return unsubscribe;
+  }, [projects, updateProject]);
+
+  const handleUseApiKey = async (apiKey: string, provider: string) => {
+    const result = await window.electronAPI.updateAgentApiKey(authProjectPath, apiKey, provider);
+    if (result.success) {
+      alert('API key configured! Please rebuild and restart your project.');
+      // Find and rebuild the project
+      const project = projects.find(p => p.path === authProjectPath);
+      if (project) {
+        updateProject(project.id, { status: 'stopped' });
+      }
+    } else {
+      alert(`Failed to update API key: ${result.error}`);
+    }
+  };
 
   const handleAddProject = async () => {
     const projectPath = await window.electronAPI.selectDirectory();
@@ -162,6 +194,13 @@ export const ProjectSidebar: React.FC = () => {
         onOpenChange={setShowInitDialog}
         onConfirm={handleInitConfirm}
         projectPath={pendingProjectPath}
+      />
+
+      <AuthRequiredDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        projectPath={authProjectPath}
+        onUseApiKey={handleUseApiKey}
       />
     </div>
   );

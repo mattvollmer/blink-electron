@@ -139,6 +139,93 @@ ipcMain.handle('init-blink-project', async (event, projectPath: string) => {
   }
 });
 
+ipcMain.handle('run-blink-login', async () => {
+  try {
+    const { spawn } = require('child_process');
+    
+    return new Promise((resolve) => {
+      const loginProcess = spawn('blink', ['login'], {
+        shell: true,
+        stdio: 'inherit', // Show interactive prompt in terminal
+      });
+
+      loginProcess.on('close', (code: number) => {
+        if (code === 0) {
+          resolve({ success: true });
+        } else {
+          resolve({ success: false, error: `Login process exited with code ${code}` });
+        }
+      });
+
+      loginProcess.on('error', (error: Error) => {
+        resolve({ success: false, error: error.message });
+      });
+    });
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey: string, provider: string) => {
+  try {
+    const agentPath = path.join(projectPath, 'agent.ts');
+    let agentContent = await fs.readFile(agentPath, 'utf-8');
+    
+    // Update the model line based on provider
+    if (provider === 'anthropic') {
+      // Replace blink.model with direct Anthropic
+      agentContent = agentContent.replace(
+        /model: blink\.model\([^)]+\)/,
+        `model: anthropic('claude-3-5-sonnet-20241022')`
+      );
+      
+      // Add Anthropic import if not present
+      if (!agentContent.includes('import { anthropic }')) {
+        agentContent = `import { anthropic } from '@ai-sdk/anthropic';\n${agentContent}`;
+      }
+    } else if (provider === 'openai') {
+      // Replace blink.model with direct OpenAI
+      agentContent = agentContent.replace(
+        /model: blink\.model\([^)]+\)/,
+        `model: openai('gpt-4-turbo')`
+      );
+      
+      // Add OpenAI import if not present
+      if (!agentContent.includes('import { openai }')) {
+        agentContent = `import { openai } from '@ai-sdk/openai';\n${agentContent}`;
+      }
+    }
+    
+    await fs.writeFile(agentPath, agentContent, 'utf-8');
+    
+    // Update .env.local with API key
+    const envPath = path.join(projectPath, '.env.local');
+    let envContent = '';
+    try {
+      envContent = await fs.readFile(envPath, 'utf-8');
+    } catch {
+      // File doesn't exist, create new
+    }
+    
+    const envKey = provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY';
+    const envLine = `${envKey}=${apiKey}`;
+    
+    if (envContent.includes(envKey)) {
+      // Replace existing key
+      envContent = envContent.replace(new RegExp(`${envKey}=.*`), envLine);
+    } else {
+      // Add new key
+      envContent += `\n${envLine}\n`;
+    }
+    
+    await fs.writeFile(envPath, envContent, 'utf-8');
+    
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.

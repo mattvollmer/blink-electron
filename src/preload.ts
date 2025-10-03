@@ -21,6 +21,12 @@ const api = {
   initBlinkProject: (projectPath: string) =>
     ipcRenderer.invoke('init-blink-project', projectPath),
   
+  runBlinkLogin: () =>
+    ipcRenderer.invoke('run-blink-login'),
+  
+  updateAgentApiKey: (projectPath: string, apiKey: string, provider: string) =>
+    ipcRenderer.invoke('update-agent-api-key', projectPath, apiKey, provider),
+  
   onBlinkLog: (callback: (data: { projectId: string; level: string; message: string }) => void) => {
     const subscription = (_event: any, data: any) => callback(data);
     ipcRenderer.on('blink:log', subscription);
