@@ -142,94 +142,102 @@ ipcMain.handle('init-blink-project', async (event, projectPath: string) => {
 ipcMain.handle('run-blink-login', async (event) => {
   try {
     const { shell } = require('electron');
-    const http = require('http');
-    const { URL } = require('url');
+    const WebSocket = require('ws');
     
     return new Promise((resolve) => {
-      // Create local server to receive auth callback
-      const server = http.createServer((req: any, res: any) => {
-        const url = new URL(req.url, `http://localhost:8888`);
+      // Generate a unique ID for this auth session
+      const authId = `cli-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      // Connect to Blink's CommandLineAuth WebSocket
+      const ws = new WebSocket(`wss://blink.so/api/auth/ws?id=${authId}`);
+      
+      let resolved = false;
+      
+      ws.on('open', () => {
+        console.log('[Blink Auth] WebSocket connected');
         
-        if (url.pathname === '/callback') {
-          const token = url.searchParams.get('token');
+        // Open browser to auth page with the ID
+        const authUrl = `https://blink.so/auth?id=${authId}`;
+        shell.openExternal(authUrl);
+        console.log('[Blink Auth] Opening:', authUrl);
+        console.log('[Blink Auth] Waiting for authorization...');
+      });
+      
+      ws.on('message', async (data: Buffer) => {
+        try {
+          const token = data.toString();
+          console.log('[Blink Auth] Received token');
           
-          if (token) {
-            // Save token using Blink's auth system
-            try {
-              const os = require('os');
-              const path = require('path');
-              const fs = require('fs');
-              
-              // Determine Blink data directory
-              const homeDir = os.homedir();
-              let dataDir;
-              
-              if (process.platform === 'darwin') {
-                dataDir = path.join(homeDir, 'Library', 'Application Support', 'blink');
-              } else if (process.platform === 'win32') {
-                dataDir = path.join(homeDir, 'AppData', 'Roaming', 'blink');
-              } else {
-                dataDir = path.join(homeDir, '.local', 'share', 'blink');
-              }
-              
-              // Create directory if it doesn't exist
-              if (!fs.existsSync(dataDir)) {
-                fs.mkdirSync(dataDir, { recursive: true });
-              }
-              
-              // Save auth.json
-              const authPath = path.join(dataDir, 'auth.json');
-              const authData = {
-                _: 'This is your Blink credentials file. DO NOT SHARE THIS FILE WITH ANYONE!',
-                token: token
-              };
-              
-              fs.writeFileSync(authPath, JSON.stringify(authData, null, 2));
-              
-              // Send success response
-              res.writeHead(200, { 'Content-Type': 'text/html' });
-              res.end(`
-                <html>
-                  <body style="font-family: system-ui; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f5;">
-                    <div style="text-align: center;">
-                      <h1 style="color: #10b981; margin-bottom: 16px;">✓ Authentication Successful!</h1>
-                      <p style="color: #666;">You can close this window and return to the app.</p>
-                    </div>
-                  </body>
-                </html>
-              `);
-              
-              server.close();
-              resolve({ success: true });
-            } catch (error: any) {
-              res.writeHead(500, { 'Content-Type': 'text/html' });
-              res.end(`<h1>Error saving token: ${error.message}</h1>`);
-              server.close();
-              resolve({ success: false, error: error.message });
-            }
+          // Save token using Blink's auth system
+          const os = require('os');
+          const path = require('path');
+          const fs = require('fs');
+          
+          // Determine Blink data directory
+          const homeDir = os.homedir();
+          let dataDir;
+          
+          if (process.platform === 'darwin') {
+            dataDir = path.join(homeDir, 'Library', 'Application Support', 'blink');
+          } else if (process.platform === 'win32') {
+            dataDir = path.join(homeDir, 'AppData', 'Roaming', 'blink');
           } else {
-            res.writeHead(400, { 'Content-Type': 'text/html' });
-            res.end('<h1>No token received</h1>');
-            server.close();
-            resolve({ success: false, error: 'No token received' });
+            dataDir = path.join(homeDir, '.local', 'share', 'blink');
+          }
+          
+          // Create directory if it doesn't exist
+          if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+          }
+          
+          // Save auth.json
+          const authPath = path.join(dataDir, 'auth.json');
+          const authData = {
+            _: 'This is your Blink credentials file. DO NOT SHARE THIS FILE WITH ANYONE!',
+            token: token
+          };
+          
+          fs.writeFileSync(authPath, JSON.stringify(authData, null, 2));
+          
+          ws.close();
+          if (!resolved) {
+            resolved = true;
+            resolve({ success: true });
+          }
+        } catch (error: any) {
+          ws.close();
+          if (!resolved) {
+            resolved = true;
+            resolve({ success: false, error: error.message });
           }
         }
       });
       
-      server.listen(8888, () => {
-        // Open Blink auth URL with callback
-        const authUrl = `https://blink.so/auth?callback=http://localhost:8888/callback`;
-        shell.openExternal(authUrl);
-        console.log('[Blink Auth] Server listening on http://localhost:8888');
-        console.log('[Blink Auth] Opening:', authUrl);
-        console.log('[Blink Auth] Waiting for callback...');
+      ws.on('error', (error: Error) => {
+        console.error('[Blink Auth] WebSocket error:', error);
+        if (!resolved) {
+          resolved = true;
+          resolve({ success: false, error: error.message });
+        }
+      });
+      
+      ws.on('close', () => {
+        console.log('[Blink Auth] WebSocket closed');
+        if (!resolved) {
+          resolved = true;
+          resolve({ 
+            success: false, 
+            error: 'Connection closed. Please try again and make sure to click "Authorize" on the blink.so page.' 
+          });
+        }
       });
       
       // Timeout after 2 minutes
       setTimeout(() => {
-        if (server.listening) {
-          console.log('[Blink Auth] Timeout - closing server');
-          server.close();
+        if (!resolved) {
+          console.log('[Blink Auth] Timeout');
+          ws.close();
+          resolved = true;
           resolve({ 
             success: false, 
             error: 'Authentication timeout. Please try again and make sure to click "Authorize" on the blink.so page.' 
