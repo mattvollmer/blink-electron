@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import { Button } from './ui/button';
 import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
+import { InitProjectDialog } from './InitProjectDialog';
 
 export const ProjectSidebar: React.FC = () => {
   const { projects, currentProjectId, setCurrentProject, addProject, removeProject, updateProject } = useProjectStore();
+  const [showInitDialog, setShowInitDialog] = useState(false);
+  const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
 
   const handleAddProject = async () => {
     const projectPath = await window.electronAPI.selectDirectory();
@@ -17,25 +20,34 @@ export const ProjectSidebar: React.FC = () => {
     }
 
     if (!check.isBlinkProject) {
-      // Ask user if they want to initialize it
-      const shouldInit = confirm(
-        `This directory is not a Blink project yet.\n\nWould you like to initialize it with "blink init"?`
-      );
-      
-      if (!shouldInit) return;
-      
-      // Run blink init
-      const initResult = await window.electronAPI.initBlinkProject(projectPath);
-      
-      if (!initResult.success) {
-        alert(`Failed to initialize Blink project:\n${initResult.error}`);
-        return;
-      }
+      // Show dialog and store the path
+      setPendingProjectPath(projectPath);
+      setShowInitDialog(true);
+    } else {
+      // Already a Blink project, add it directly
+      addProjectToList(projectPath);
+    }
+  };
+
+  const handleInitConfirm = async () => {
+    if (!pendingProjectPath) return;
+
+    // Run blink init
+    const initResult = await window.electronAPI.initBlinkProject(pendingProjectPath);
+    
+    if (!initResult.success) {
+      alert(`Failed to initialize Blink project:\n${initResult.error}`);
+      return;
     }
 
+    // Add to project list
+    addProjectToList(pendingProjectPath);
+    setPendingProjectPath('');
+  };
+
+  const addProjectToList = (projectPath: string) => {
     const port = 3000 + projects.length;
     const name = projectPath.split('/').pop() || 'Unnamed Project';
-
     addProject({ name, path: projectPath, port });
   };
 
@@ -144,6 +156,13 @@ export const ProjectSidebar: React.FC = () => {
           Add Project
         </Button>
       </div>
+
+      <InitProjectDialog
+        open={showInitDialog}
+        onOpenChange={setShowInitDialog}
+        onConfirm={handleInitConfirm}
+        projectPath={pendingProjectPath}
+      />
     </div>
   );
 };

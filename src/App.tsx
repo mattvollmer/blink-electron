@@ -1,19 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useProjectStore } from './store/projectStore';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { Button } from './components/ui/button';
 import { FolderPlus } from 'lucide-react';
+import { InitProjectDialog } from './components/InitProjectDialog';
 
 export const App: React.FC = () => {
-  const { projects, currentProjectId, addProject, setCurrentProject } = useProjectStore();
+  const { projects, currentProjectId, addProject } = useProjectStore();
   const currentProject = projects.find(p => p.id === currentProjectId);
+  const [showInitDialog, setShowInitDialog] = useState(false);
+  const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
 
   const handleAddProject = async () => {
     const projectPath = await window.electronAPI.selectDirectory();
     if (!projectPath) return;
 
-    // Check if it's already a blink project
     const check = await window.electronAPI.checkBlinkProject(projectPath);
     if (!check.success) {
       alert('Failed to check project');
@@ -21,26 +23,34 @@ export const App: React.FC = () => {
     }
 
     if (!check.isBlinkProject) {
-      // Ask user if they want to initialize it
-      const shouldInit = confirm(
-        `This directory is not a Blink project yet.\n\nWould you like to initialize it with "blink init"?`
-      );
-      
-      if (!shouldInit) return;
-      
-      // Run blink init
-      const initResult = await window.electronAPI.initBlinkProject(projectPath);
-      
-      if (!initResult.success) {
-        alert(`Failed to initialize Blink project:\n${initResult.error}`);
-        return;
-      }
+      // Show dialog and store the path
+      setPendingProjectPath(projectPath);
+      setShowInitDialog(true);
+    } else {
+      // Already a Blink project, add it directly
+      addProjectToList(projectPath);
+    }
+  };
+
+  const handleInitConfirm = async () => {
+    if (!pendingProjectPath) return;
+
+    // Run blink init
+    const initResult = await window.electronAPI.initBlinkProject(pendingProjectPath);
+    
+    if (!initResult.success) {
+      alert(`Failed to initialize Blink project:\n${initResult.error}`);
+      return;
     }
 
-    // Find an available port
+    // Add to project list
+    addProjectToList(pendingProjectPath);
+    setPendingProjectPath('');
+  };
+
+  const addProjectToList = (projectPath: string) => {
     const port = 3000 + projects.length;
     const name = projectPath.split('/').pop() || 'Unnamed Project';
-
     addProject({ name, path: projectPath, port });
   };
 
@@ -64,6 +74,13 @@ export const App: React.FC = () => {
           </div>
         )}
       </div>
+
+      <InitProjectDialog
+        open={showInitDialog}
+        onOpenChange={setShowInitDialog}
+        onConfirm={handleInitConfirm}
+        projectPath={pendingProjectPath}
+      />
     </div>
   );
 };
