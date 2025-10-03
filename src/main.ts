@@ -24,6 +24,20 @@ const createWindow = () => {
   // Set the main window for process manager
   blinkProcessManager.setMainWindow(mainWindow);
 
+  // Add CORS headers for localhost Blink agents
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+    
+    // Add CORS headers for requests to localhost:3000-3999 (Blink agents)
+    if (details.url.match(/http:\/\/localhost:(3\d{3})/)) {
+      responseHeaders['Access-Control-Allow-Origin'] = ['*'];
+      responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS'];
+      responseHeaders['Access-Control-Allow-Headers'] = ['Content-Type, Authorization'];
+    }
+    
+    callback({ responseHeaders });
+  });
+
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
