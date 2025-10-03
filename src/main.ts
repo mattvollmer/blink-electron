@@ -256,37 +256,6 @@ ipcMain.handle('run-blink-login', async (event) => {
 
 ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey: string, provider: string) => {
   try {
-    const agentPath = path.join(projectPath, 'agent.ts');
-    let agentContent = await fs.readFile(agentPath, 'utf-8');
-    
-    // Update the model line based on provider
-    if (provider === 'anthropic') {
-      // Replace blink.model with direct Anthropic
-      agentContent = agentContent.replace(
-        /model: blink\.model\([^)]+\)/,
-        `model: anthropic('claude-3-5-sonnet-20241022')`
-      );
-      
-      // Add Anthropic import if not present
-      if (!agentContent.includes('import { anthropic }')) {
-        agentContent = `import { anthropic } from '@ai-sdk/anthropic';\n${agentContent}`;
-      }
-    } else if (provider === 'openai') {
-      // Replace blink.model with direct OpenAI
-      agentContent = agentContent.replace(
-        /model: blink\.model\([^)]+\)/,
-        `model: openai('gpt-4-turbo')`
-      );
-      
-      // Add OpenAI import if not present
-      if (!agentContent.includes('import { openai }')) {
-        agentContent = `import { openai } from '@ai-sdk/openai';\n${agentContent}`;
-      }
-    }
-    
-    await fs.writeFile(agentPath, agentContent, 'utf-8');
-    
-    // Update .env.local with API key
     const envPath = path.join(projectPath, '.env.local');
     let envContent = '';
     try {
@@ -295,7 +264,47 @@ ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey
       // File doesn't exist, create new
     }
     
-    const envKey = provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY';
+    let envKey: string;
+    
+    if (provider === 'blink') {
+      // For Blink, just add the API key to env
+      envKey = 'BLINK_API_KEY';
+    } else if (provider === 'anthropic') {
+      envKey = 'ANTHROPIC_API_KEY';
+      // Also update agent.ts to use anthropic directly
+      const agentPath = path.join(projectPath, 'agent.ts');
+      let agentContent = await fs.readFile(agentPath, 'utf-8');
+      
+      agentContent = agentContent.replace(
+        /model: blink\.model\([^)]+\)/,
+        `model: anthropic('claude-3-5-sonnet-20241022')`
+      );
+      
+      if (!agentContent.includes('import { anthropic }')) {
+        agentContent = `import { anthropic } from '@ai-sdk/anthropic';\n${agentContent}`;
+      }
+      
+      await fs.writeFile(agentPath, agentContent, 'utf-8');
+    } else if (provider === 'openai') {
+      envKey = 'OPENAI_API_KEY';
+      // Also update agent.ts to use openai directly
+      const agentPath = path.join(projectPath, 'agent.ts');
+      let agentContent = await fs.readFile(agentPath, 'utf-8');
+      
+      agentContent = agentContent.replace(
+        /model: blink\.model\([^)]+\)/,
+        `model: openai('gpt-4-turbo')`
+      );
+      
+      if (!agentContent.includes('import { openai }')) {
+        agentContent = `import { openai } from '@ai-sdk/openai';\n${agentContent}`;
+      }
+      
+      await fs.writeFile(agentPath, agentContent, 'utf-8');
+    } else {
+      return { success: false, error: 'Unknown provider' };
+    }
+    
     const envLine = `${envKey}=${apiKey}`;
     
     if (envContent.includes(envKey)) {

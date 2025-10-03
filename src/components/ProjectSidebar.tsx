@@ -28,20 +28,6 @@ export const ProjectSidebar: React.FC = () => {
     return unsubscribe;
   }, [projects, updateProject]);
 
-  const handleUseApiKey = async (apiKey: string, provider: string) => {
-    const result = await window.electronAPI.updateAgentApiKey(authProjectPath, apiKey, provider);
-    if (result.success) {
-      toast.success('API key configured! Please rebuild and restart your project.');
-      // Find and rebuild the project
-      const project = projects.find(p => p.path === authProjectPath);
-      if (project) {
-        updateProject(project.id, { status: 'stopped' });
-      }
-    } else {
-      toast.error(`Failed to update API key: ${result.error}`);
-    }
-  };
-
   const handleAddProject = async () => {
     const projectPath = await window.electronAPI.selectDirectory();
     if (!projectPath) return;
@@ -201,7 +187,6 @@ export const ProjectSidebar: React.FC = () => {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         projectPath={authProjectPath}
-        onUseApiKey={handleUseApiKey}
       />
     </div>
   );
