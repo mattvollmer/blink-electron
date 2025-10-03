@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { useProjectStore } from './store/projectStore';
-import './App.css';
 import { Toaster } from 'sonner';
 
 export const App: React.FC = () => {
