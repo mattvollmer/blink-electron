@@ -28,12 +28,12 @@ const createWindow = () => {
   const session = mainWindow.webContents.session;
   
   // Handle outgoing requests
-  session.webRequest.onBeforeSendHeaders({ urls: ['http://localhost:3*/*'] }, (details, callback) => {
+  session.webRequest.onBeforeSendHeaders({ urls: ['http://localhost:3000/*', 'http://localhost:3001/*', 'http://localhost:3002/*', 'http://localhost:3003/*', 'http://localhost:3004/*', 'http://localhost:3005/*', 'http://localhost:3006/*', 'http://localhost:3007/*', 'http://localhost:3008/*', 'http://localhost:3009/*'] }, (details, callback) => {
     callback({ requestHeaders: details.requestHeaders });
   });
   
   // Handle incoming responses - add CORS headers
-  session.webRequest.onHeadersReceived({ urls: ['http://localhost:3*/*'] }, (details, callback) => {
+  session.webRequest.onHeadersReceived({ urls: ['http://localhost:3000/*', 'http://localhost:3001/*', 'http://localhost:3002/*', 'http://localhost:3003/*', 'http://localhost:3004/*', 'http://localhost:3005/*', 'http://localhost:3006/*', 'http://localhost:3007/*', 'http://localhost:3008/*', 'http://localhost:3009/*'] }, (details, callback) => {
     const responseHeaders = details.responseHeaders || {};
     
     responseHeaders['Access-Control-Allow-Origin'] = ['*'];
