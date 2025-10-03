@@ -58,14 +58,22 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Logging in to Blink...</DialogTitle>
-            <DialogDescription className="text-base leading-relaxed pt-2">
-              A browser window should open shortly.
-              <br />
-              <br />
-              Complete the authentication in your browser, then this dialog will close automatically.
+            <DialogTitle>Browser Opening...</DialogTitle>
+            <DialogDescription className="text-base leading-relaxed pt-2 space-y-3">
+              <p>Your browser will open to blink.so</p>
+              
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="font-medium mb-2">After browser opens, run this in your terminal:</p>
+                <code className="block bg-background px-3 py-2 rounded text-sm">
+                  blink login
+                </code>
+              </div>
+              
+              <p className="text-sm text-muted-foreground">
+                Once authenticated, restart your project in this app.
+              </p>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
@@ -92,6 +100,24 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
 
             <div className="space-y-3 py-4">
               <button
+                onClick={() => setView('api-key')}
+                className="w-full p-4 border-2 border-primary rounded-lg hover:bg-accent transition-colors text-left"
+              >
+                <div className="flex items-start gap-3">
+                  <Key className="w-5 h-5 mt-0.5 text-primary" />
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-medium">Use Your Own API Key</h3>
+                      <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">Recommended</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Configure Anthropic or OpenAI directly (easiest setup)
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
                 onClick={handleBlinkLogin}
                 disabled={isLoading}
                 className="w-full p-4 border rounded-lg hover:bg-accent transition-colors text-left"
@@ -99,24 +125,9 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
                 <div className="flex items-start gap-3">
                   <ExternalLink className="w-5 h-5 mt-0.5 text-primary" />
                   <div>
-                    <h3 className="font-medium mb-1">Login to Blink</h3>
+                    <h3 className="font-medium mb-1">Login to Blink (Terminal Required)</h3>
                     <p className="text-sm text-muted-foreground">
-                      Use Blink's model gateway (includes multiple AI providers)
-                    </p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setView('api-key')}
-                className="w-full p-4 border rounded-lg hover:bg-accent transition-colors text-left"
-              >
-                <div className="flex items-start gap-3">
-                  <Key className="w-5 h-5 mt-0.5 text-primary" />
-                  <div>
-                    <h3 className="font-medium mb-1">Use Your Own API Key</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Configure Anthropic or OpenAI directly
+                      You'll need to run 'blink login' in your terminal after this opens your browser
                     </p>
                   </div>
                 </div>

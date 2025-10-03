@@ -141,49 +141,15 @@ ipcMain.handle('init-blink-project', async (event, projectPath: string) => {
 
 ipcMain.handle('run-blink-login', async (event) => {
   try {
-    const { spawn } = require('child_process');
     const { shell } = require('electron');
     
-    return new Promise((resolve) => {
-      const loginProcess = spawn('blink', ['login'], {
-        shell: true,
-      });
-
-      let output = '';
-      let authUrl = '';
-
-      loginProcess.stdout?.on('data', (data: Buffer) => {
-        const text = data.toString();
-        output += text;
-        console.log('[blink login]', text);
-        
-        // Look for auth URL
-        const urlMatch = text.match(/https:\/\/blink\.so\/auth\?id=[a-zA-Z0-9-]+/);
-        if (urlMatch && !authUrl) {
-          authUrl = urlMatch[0];
-          // Open the URL in browser
-          shell.openExternal(authUrl);
-          // Send to renderer to show to user
-          event.sender.send('blink:auth-url', authUrl);
-        }
-      });
-
-      loginProcess.stderr?.on('data', (data: Buffer) => {
-        console.error('[blink login error]', data.toString());
-      });
-
-      loginProcess.on('close', (code: number) => {
-        if (code === 0) {
-          resolve({ success: true, output });
-        } else {
-          resolve({ success: false, error: `Login process exited with code ${code}` });
-        }
-      });
-
-      loginProcess.on('error', (error: Error) => {
-        resolve({ success: false, error: error.message });
-      });
-    });
+    // Open Blink website
+    await shell.openExternal('https://blink.so');
+    
+    return { 
+      success: true, 
+      message: 'Please run "blink login" in your terminal to complete authentication.' 
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
