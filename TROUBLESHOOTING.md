@@ -26,6 +26,21 @@ npm start
 
 ## Electron Won't Start
 
+### Error: "Multiple plugins tried to take control of the start command"
+
+**Cause**: FusesPlugin conflicting with VitePlugin in forge.config.ts
+
+**Fix**: This is already fixed in the latest version. If you still see it:
+
+```bash
+git pull origin main
+rm -rf node_modules package-lock.json
+npm install
+npm start
+```
+
+If you're on an older version, comment out the FusesPlugin in `forge.config.ts`.
+
 ### Error: "libgtk-3.so.0: cannot open shared object file"
 
 **Cause**: Missing system libraries (Linux only)
