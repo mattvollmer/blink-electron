@@ -325,17 +325,17 @@ ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey
 
 ipcMain.handle('rebuild-project', async (event, projectId: string) => {
   try {
+    // Get project info BEFORE stopping (so we don't lose it)
+    const projectInfo = blinkProcessManager.getProjectInfo(projectId);
+    if (!projectInfo) {
+      return { success: false, error: 'Project not found' };
+    }
+    
     // Stop the project
     blinkProcessManager.stopProject(projectId);
     
     // Wait a moment for it to stop
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Get project info to restart it
-    const projectInfo = blinkProcessManager.getProjectInfo(projectId);
-    if (!projectInfo) {
-      return { success: false, error: 'Project not found' };
-    }
     
     // Restart with rebuild
     await blinkProcessManager.startProject(projectId, projectInfo.projectPath, projectInfo.port);
