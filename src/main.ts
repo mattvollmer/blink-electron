@@ -147,7 +147,7 @@ ipcMain.handle('run-blink-login', async (event) => {
       const authId = `cli-${Date.now()}-${Math.random().toString(36).substring(7)}`;
       
       // Connect to Blink's CommandLineAuth WebSocket
-      const ws = new WebSocket(`wss://blink.so/api/auth/ws?id=${authId}`);
+      const ws = new WebSocket(`wss://blink.so/api/auth?id=${authId}`);
       
       let resolved = false;
       
