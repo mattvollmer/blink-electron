@@ -142,14 +142,94 @@ ipcMain.handle('init-blink-project', async (event, projectPath: string) => {
 ipcMain.handle('run-blink-login', async (event) => {
   try {
     const { shell } = require('electron');
+    const http = require('http');
+    const { URL } = require('url');
     
-    // Open Blink website
-    await shell.openExternal('https://blink.so');
-    
-    return { 
-      success: true, 
-      message: 'Please run "blink login" in your terminal to complete authentication.' 
-    };
+    return new Promise((resolve) => {
+      // Create local server to receive auth callback
+      const server = http.createServer((req: any, res: any) => {
+        const url = new URL(req.url, `http://localhost:8888`);
+        
+        if (url.pathname === '/callback') {
+          const token = url.searchParams.get('token');
+          
+          if (token) {
+            // Save token using Blink's auth system
+            try {
+              const os = require('os');
+              const path = require('path');
+              const fs = require('fs');
+              
+              // Determine Blink data directory
+              const homeDir = os.homedir();
+              let dataDir;
+              
+              if (process.platform === 'darwin') {
+                dataDir = path.join(homeDir, 'Library', 'Application Support', 'blink');
+              } else if (process.platform === 'win32') {
+                dataDir = path.join(homeDir, 'AppData', 'Roaming', 'blink');
+              } else {
+                dataDir = path.join(homeDir, '.local', 'share', 'blink');
+              }
+              
+              // Create directory if it doesn't exist
+              if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, { recursive: true });
+              }
+              
+              // Save auth.json
+              const authPath = path.join(dataDir, 'auth.json');
+              const authData = {
+                _: 'This is your Blink credentials file. DO NOT SHARE THIS FILE WITH ANYONE!',
+                token: token
+              };
+              
+              fs.writeFileSync(authPath, JSON.stringify(authData, null, 2));
+              
+              // Send success response
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end(`
+                <html>
+                  <body style="font-family: system-ui; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f5;">
+                    <div style="text-align: center;">
+                      <h1 style="color: #10b981; margin-bottom: 16px;">✓ Authentication Successful!</h1>
+                      <p style="color: #666;">You can close this window and return to the app.</p>
+                    </div>
+                  </body>
+                </html>
+              `);
+              
+              server.close();
+              resolve({ success: true });
+            } catch (error: any) {
+              res.writeHead(500, { 'Content-Type': 'text/html' });
+              res.end(`<h1>Error saving token: ${error.message}</h1>`);
+              server.close();
+              resolve({ success: false, error: error.message });
+            }
+          } else {
+            res.writeHead(400, { 'Content-Type': 'text/html' });
+            res.end('<h1>No token received</h1>');
+            server.close();
+            resolve({ success: false, error: 'No token received' });
+          }
+        }
+      });
+      
+      server.listen(8888, () => {
+        // Open Blink auth URL with callback
+        const authUrl = `https://blink.so/auth?callback=http://localhost:8888/callback`;
+        shell.openExternal(authUrl);
+        console.log('[Blink Auth] Server listening on http://localhost:8888');
+        console.log('[Blink Auth] Opening:', authUrl);
+      });
+      
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        server.close();
+        resolve({ success: false, error: 'Authentication timeout' });
+      }, 5 * 60 * 1000);
+    });
   } catch (error: any) {
     return { success: false, error: error.message };
   }
