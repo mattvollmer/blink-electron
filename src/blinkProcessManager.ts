@@ -46,11 +46,13 @@ class BlinkProcessManager {
         blinkProcess.stdout?.on('data', (data) => {
           console.log(`[${projectId}] stdout:`, data.toString());
           // Send logs to renderer
-          this.mainWindow?.webContents.send('blink:log', {
-            projectId,
-            level: 'info',
-            message: data.toString(),
-          });
+          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('blink:log', {
+              projectId,
+              level: 'info',
+              message: data.toString(),
+            });
+          }
         });
 
         blinkProcess.stderr?.on('data', (data) => {
@@ -58,11 +60,13 @@ class BlinkProcessManager {
           console.error(`[${projectId}] stderr:`, message);
           startupError += message;
           
-          this.mainWindow?.webContents.send('blink:log', {
-            projectId,
-            level: 'error',
-            message,
-          });
+          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('blink:log', {
+              projectId,
+              level: 'error',
+              message,
+            });
+          }
         });
 
         blinkProcess.on('error', (error) => {
@@ -75,10 +79,12 @@ class BlinkProcessManager {
           console.log(`[${projectId}] Process exited with code ${code}`);
           this.processes.delete(projectId);
           
-          this.mainWindow?.webContents.send('blink:process-exit', {
-            projectId,
-            code,
-          });
+          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('blink:process-exit', {
+              projectId,
+              code,
+            });
+          }
         });
 
         // Store the process

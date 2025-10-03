@@ -25,15 +25,21 @@ const createWindow = () => {
   blinkProcessManager.setMainWindow(mainWindow);
 
   // Add CORS headers for localhost Blink agents
-  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    const responseHeaders = { ...details.responseHeaders };
+  const session = mainWindow.webContents.session;
+  
+  // Handle outgoing requests
+  session.webRequest.onBeforeSendHeaders({ urls: ['http://localhost:3*/*'] }, (details, callback) => {
+    callback({ requestHeaders: details.requestHeaders });
+  });
+  
+  // Handle incoming responses - add CORS headers
+  session.webRequest.onHeadersReceived({ urls: ['http://localhost:3*/*'] }, (details, callback) => {
+    const responseHeaders = details.responseHeaders || {};
     
-    // Add CORS headers for requests to localhost:3000-3999 (Blink agents)
-    if (details.url.match(/http:\/\/localhost:(3\d{3})/)) {
-      responseHeaders['Access-Control-Allow-Origin'] = ['*'];
-      responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS'];
-      responseHeaders['Access-Control-Allow-Headers'] = ['Content-Type, Authorization'];
-    }
+    responseHeaders['Access-Control-Allow-Origin'] = ['*'];
+    responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH'];
+    responseHeaders['Access-Control-Allow-Headers'] = ['Content-Type, Authorization, Accept'];
+    responseHeaders['Access-Control-Max-Age'] = ['86400'];
     
     callback({ responseHeaders });
   });
