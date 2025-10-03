@@ -12,14 +12,55 @@ class BlinkProcessManager {
   private processes: Map<string, BlinkProcess> = new Map();
   private mainWindow: BrowserWindow | null = null;
 
-  setMainWindow(window: BrowserWindow) {
+  setMainWindow(window: BrowserWindow): void {
     this.mainWindow = window;
+  }
+
+  private async killProcessOnPort(port: number): Promise<void> {
+    try {
+      const { exec } = require('child_process');
+      const util = require('util');
+      const execPromise = util.promisify(exec);
+
+      if (process.platform === 'win32') {
+        // Windows
+        const { stdout } = await execPromise(`netstat -ano | findstr :${port}`);
+        const lines = stdout.split('\n').filter((line: string) => line.includes('LISTENING'));
+        
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          const pid = parts[parts.length - 1];
+          if (pid && pid !== '0') {
+            await execPromise(`taskkill /F /PID ${pid}`);
+            console.log(`Killed process ${pid} on port ${port}`);
+          }
+        }
+      } else {
+        // macOS/Linux
+        try {
+          const { stdout } = await execPromise(`lsof -ti:${port}`);
+          const pids = stdout.trim().split('\n').filter((pid: string) => pid);
+          
+          for (const pid of pids) {
+            await execPromise(`kill -9 ${pid}`);
+            console.log(`Killed process ${pid} on port ${port}`);
+          }
+        } catch (error) {
+          // No process found on port, that's fine
+        }
+      }
+    } catch (error) {
+      console.log(`No process to kill on port ${port}`);
+    }
   }
 
   async startProject(projectId: string, projectPath: string, port: number): Promise<void> {
     if (this.processes.has(projectId)) {
       throw new Error(`Project ${projectId} is already running`);
     }
+
+    // Kill any existing process on this port
+    await this.killProcessOnPort(port);
 
     return new Promise((resolve, reject) => {
       // First, build the project
