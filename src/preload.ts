@@ -18,6 +18,9 @@ const api = {
   checkBlinkProject: (projectPath: string) =>
     ipcRenderer.invoke('check-blink-project', projectPath),
   
+  initBlinkProject: (projectPath: string) =>
+    ipcRenderer.invoke('init-blink-project', projectPath),
+  
   onBlinkLog: (callback: (data: { projectId: string; level: string; message: string }) => void) => {
     const subscription = (_event: any, data: any) => callback(data);
     ipcRenderer.on('blink:log', subscription);

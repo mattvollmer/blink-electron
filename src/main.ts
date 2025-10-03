@@ -99,6 +99,45 @@ ipcMain.handle('check-blink-project', async (event, projectPath: string) => {
   }
 });
 
+ipcMain.handle('init-blink-project', async (event, projectPath: string) => {
+  try {
+    // Run blink init in the project directory
+    const { spawn } = require('child_process');
+    
+    return new Promise((resolve) => {
+      const initProcess = spawn('blink', ['init'], {
+        cwd: projectPath,
+        shell: true,
+      });
+
+      let output = '';
+      let errorOutput = '';
+
+      initProcess.stdout?.on('data', (data: Buffer) => {
+        output += data.toString();
+      });
+
+      initProcess.stderr?.on('data', (data: Buffer) => {
+        errorOutput += data.toString();
+      });
+
+      initProcess.on('close', (code: number) => {
+        if (code === 0) {
+          resolve({ success: true, output });
+        } else {
+          resolve({ success: false, error: errorOutput || output });
+        }
+      });
+
+      initProcess.on('error', (error: Error) => {
+        resolve({ success: false, error: error.message });
+      });
+    });
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.

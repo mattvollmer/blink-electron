@@ -17,8 +17,20 @@ export const ProjectSidebar: React.FC = () => {
     }
 
     if (!check.isBlinkProject) {
-      alert('This directory does not contain a Blink project. Please run "blink init" first.');
-      return;
+      // Ask user if they want to initialize it
+      const shouldInit = confirm(
+        `This directory is not a Blink project yet.\n\nWould you like to initialize it with "blink init"?`
+      );
+      
+      if (!shouldInit) return;
+      
+      // Run blink init
+      const initResult = await window.electronAPI.initBlinkProject(projectPath);
+      
+      if (!initResult.success) {
+        alert(`Failed to initialize Blink project:\n${initResult.error}`);
+        return;
+      }
     }
 
     const port = 3000 + projects.length;
