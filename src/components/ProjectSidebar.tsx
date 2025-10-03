@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
 import { InitProjectDialog } from './InitProjectDialog';
 import { AuthRequiredDialog } from './AuthRequiredDialog';
+import { toast } from 'sonner';
 
 export const ProjectSidebar: React.FC = () => {
   const { projects, currentProjectId, setCurrentProject, addProject, removeProject, updateProject } = useProjectStore();
@@ -30,14 +31,14 @@ export const ProjectSidebar: React.FC = () => {
   const handleUseApiKey = async (apiKey: string, provider: string) => {
     const result = await window.electronAPI.updateAgentApiKey(authProjectPath, apiKey, provider);
     if (result.success) {
-      alert('API key configured! Please rebuild and restart your project.');
+      toast.success('API key configured! Please rebuild and restart your project.');
       // Find and rebuild the project
       const project = projects.find(p => p.path === authProjectPath);
       if (project) {
         updateProject(project.id, { status: 'stopped' });
       }
     } else {
-      alert(`Failed to update API key: ${result.error}`);
+      toast.error(`Failed to update API key: ${result.error}`);
     }
   };
 
@@ -47,7 +48,7 @@ export const ProjectSidebar: React.FC = () => {
 
     const check = await window.electronAPI.checkBlinkProject(projectPath);
     if (!check.success) {
-      alert('Failed to check project');
+      toast.error('Failed to check project');
       return;
     }
 
@@ -68,7 +69,7 @@ export const ProjectSidebar: React.FC = () => {
     const initResult = await window.electronAPI.initBlinkProject(pendingProjectPath);
     
     if (!initResult.success) {
-      alert(`Failed to initialize Blink project:\n${initResult.error}`);
+      toast.error(`Failed to initialize Blink project:\n${initResult.error}`);
       return;
     }
 
@@ -92,7 +93,7 @@ export const ProjectSidebar: React.FC = () => {
       updateProject(projectId, { status: 'running' });
     } else {
       updateProject(projectId, { status: 'error' });
-      alert(`Failed to start project: ${result.error}`);
+      toast.error(`Failed to start project: ${result.error}`);
     }
   };
 

@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { useProjectStore } from './store/projectStore';
+import React, { useEffect, useState } from 'react';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { ChatInterface } from './components/ChatInterface';
-import { Button } from './components/ui/button';
-import { FolderPlus } from 'lucide-react';
-import { InitProjectDialog } from './components/InitProjectDialog';
+import { useProjectStore } from './store/projectStore';
+import './App.css';
+import { Toaster } from 'sonner';
 
 export const App: React.FC = () => {
   const { projects, currentProjectId, addProject } = useProjectStore();
@@ -56,6 +55,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
+      <Toaster position="top-right" />
       <ProjectSidebar />
       
       <div className="flex-1 flex flex-col">

@@ -89,7 +89,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message. Make sure the project is running.');
+      // Auth dialog will handle authentication errors automatically
+      // No need to show alert here
     } finally {
       setIsLoading(false);
     }

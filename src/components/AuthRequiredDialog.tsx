@@ -10,6 +10,7 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { AlertCircle, Key, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AuthRequiredDialogProps {
   open: boolean;
@@ -34,13 +35,13 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
     try {
       const result = await window.electronAPI.runBlinkLogin();
       if (result.success) {
-        alert('Successfully logged in to Blink! Please restart your project.');
+        toast.success('Successfully logged in to Blink! Please restart your project.');
         onOpenChange(false);
       } else {
-        alert(`Login failed: ${result.error}`);
+        toast.error(`Login failed: ${result.error}`);
       }
     } catch (error) {
-      alert(`Error: ${error}`);
+      toast.error(`Error: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +49,7 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
 
   const handleUseApiKey = () => {
     if (!apiKey.trim()) {
-      alert('Please enter an API key');
+      toast.error('Please enter an API key');
       return;
     }
     onUseApiKey(apiKey, provider);
