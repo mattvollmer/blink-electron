@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "A beautiful desktop GUI for managing and interacting with Blink AI agents",
   "main": ".vite/build/main.js",
+  "type": "module",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
