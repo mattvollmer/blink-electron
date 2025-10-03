@@ -3,6 +3,7 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { blinkProcessManager } from './blinkProcessManager';
 import fs from 'fs/promises';
+import WebSocket from 'ws';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -141,9 +142,6 @@ ipcMain.handle('init-blink-project', async (event, projectPath: string) => {
 
 ipcMain.handle('run-blink-login', async (event) => {
   try {
-    const { shell } = require('electron');
-    const WebSocket = require('ws');
-    
     return new Promise((resolve) => {
       // Generate a unique ID for this auth session
       const authId = `cli-${Date.now()}-${Math.random().toString(36).substring(7)}`;
