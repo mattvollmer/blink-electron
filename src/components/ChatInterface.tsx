@@ -104,18 +104,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       let toolCalls: Array<{id: string, name: string, input: any}> = [];
       let toolOutputs: Map<string, any> = new Map();
       let hasTools = false;
-      let firstChunk = true;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        // Hide thinking indicator on first chunk
-        if (firstChunk) {
-          setIsThinking(false);
-          console.log('Setting isThinking to false - first chunk received');
-          firstChunk = false;
-        }
 
         // Decode the chunk and extract text from SSE format
         const chunk = decoder.decode(value, { stream: true });
