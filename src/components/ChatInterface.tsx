@@ -27,6 +27,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const isMac =
+    typeof navigator !== "undefined" &&
+    navigator.platform.toLowerCase().includes("mac");
 
   useEffect(() => {
     if (project.status === "running") {
@@ -519,6 +522,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
             <Send className="w-4 h-4" />
           </Button>
+        </div>
+        <div className="mt-2 text-xs text-muted-foreground">
+          {isMac ? "Cmd" : "Ctrl"}+R clears chat context
         </div>
       </div>
     </div>
