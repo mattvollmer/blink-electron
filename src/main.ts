@@ -326,6 +326,12 @@ ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey
     await fs.writeFile(envPath, envContent, 'utf-8');
     console.log('[update-agent-api-key] Env file written successfully');
     
+    // Also write to .env.production since that's used when running the built agent
+    const envProdPath = path.join(projectPath, '.env.production');
+    console.log('[update-agent-api-key] Also writing to:', envProdPath);
+    await fs.writeFile(envProdPath, envContent, 'utf-8');
+    console.log('[update-agent-api-key] Production env file written successfully');
+    
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
