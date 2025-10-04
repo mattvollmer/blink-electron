@@ -115,7 +115,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setInput("");
     setIsLoading(true);
     setIsThinking(true);
-    console.log("Setting isThinking to true");
     setShouldAutoScroll(true); // Always scroll when user sends a message
 
     const ctrl = new AbortController();
@@ -133,11 +132,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             },
           ],
         }),
-      );
-
-      console.log(
-        "Sending messages:",
-        JSON.stringify(formattedMessages, null, 2),
       );
 
       // Use fetch directly to the agent endpoint
@@ -175,7 +169,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
         // Decode the chunk and extract text from SSE format
         const chunk = decoder.decode(value, { stream: true });
-        console.log("Received chunk:", chunk);
         const lines = chunk.split("\n");
 
         for (const line of lines) {
@@ -235,136 +228,144 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
       // If there were tool calls, make another request with the results
       if (hasTools && toolCalls.length > 0) {
-        // Small delay to ensure first message is fully rendered
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        const ctrl2 = new AbortController();
+        addController(ctrl2);
+        try {
+          // Small delay to ensure first message is fully rendered
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
-        // Display tool calls in the UI
-        const toolCallsMessage = {
-          id: assistantId + "-tools",
-          role: "assistant" as const,
-          content: toolCalls
-            .map((tool) => {
-              const output = toolOutputs.get(tool.id);
-              return `🔧 **${tool.name}**\n\`\`\`json\nInput: ${JSON.stringify(tool.input, null, 2)}\n\nOutput: ${JSON.stringify(output, null, 2)}\n\`\`\``;
-            })
-            .join("\n\n"),
-          createdAt: new Date(Date.now() + 1), // Ensure it comes after first message
-        };
+          // Display tool calls in the UI
+          const toolCallsMessage = {
+            id: assistantId + "-tools",
+            role: "assistant" as const,
+            content: toolCalls
+              .map((tool) => {
+                const output = toolOutputs.get(tool.id);
+                return `🔧 **${tool.name}**\n\`\`\`json\nInput: ${JSON.stringify(tool.input, null, 2)}\n\nOutput: ${JSON.stringify(output, null, 2)}\n\`\`\``;
+              })
+              .join("\n\n"),
+            createdAt: new Date(Date.now() + 1), // Ensure it comes after first message
+          };
 
-        addProjectMessage(project.id, toolCallsMessage);
+          addProjectMessage(project.id, toolCallsMessage);
 
-        // Collapse tool message by default
-        setCollapsedTools((prev) => new Set([...prev, toolCallsMessage.id]));
+          // Collapse tool message by default
+          setCollapsedTools((prev) => new Set([...prev, toolCallsMessage.id]));
 
-        // Build assistant message with tool calls in parts format
-        const assistantParts: any[] = [];
+          // Build assistant message with tool calls in parts format
+          const assistantParts: any[] = [];
 
-        if (assistantMessage) {
-          assistantParts.push({ type: "text", text: assistantMessage });
-        }
+          if (assistantMessage) {
+            assistantParts.push({ type: "text", text: assistantMessage });
+          }
 
-        for (const tool of toolCalls) {
-          assistantParts.push({
-            type: `tool-${tool.name}`,
-            toolCallId: tool.id,
-            state: "output-available",
-            input: tool.input,
-            output: toolOutputs.get(tool.id),
-          });
-        }
+          for (const tool of toolCalls) {
+            assistantParts.push({
+              type: `tool-${tool.name}`,
+              toolCallId: tool.id,
+              state: "output-available",
+              input: tool.input,
+              output: toolOutputs.get(tool.id),
+            });
+          }
 
-        // Add assistant message to messages (for follow-up request context only, don't modify UI)
-        const assistantMessageWithTools = {
-          id: assistantId,
-          role: "assistant" as const,
-          parts: assistantParts,
-          content: assistantMessage,
-          createdAt: new Date(),
-        };
+          // Add assistant message to messages (for follow-up request context only, don't modify UI)
+          const assistantMessageWithTools = {
+            id: assistantId,
+            role: "assistant" as const,
+            parts: assistantParts,
+            content: assistantMessage,
+            createdAt: new Date(),
+          };
 
-        // Make follow-up request with tool results
-        const followUpMessages = [
-          ...messages,
-          userMessage,
-          assistantMessageWithTools,
-        ].map((msg) => ({
-          role: msg.role,
-          parts: msg.parts || [
+          // Make follow-up request with tool results
+          const followUpMessages = [
+            ...messages,
+            userMessage,
+            assistantMessageWithTools,
+          ].map((msg) => ({
+            role: msg.role,
+            parts: msg.parts || [
+              {
+                type: "text",
+                text: msg.content,
+              },
+            ],
+          }));
+
+          const followUpResponse = await fetch(
+            `http://localhost:${project.port}/_agent/chat`,
             {
-              type: "text",
-              text: msg.content,
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ messages: followUpMessages }),
             },
-          ],
-        }));
+          );
 
-        const followUpResponse = await fetch(
-          `http://localhost:${project.port}/_agent/chat`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ messages: followUpMessages }),
-          },
-        );
+          if (!followUpResponse.ok) {
+            throw new Error(`HTTP error! status: ${followUpResponse.status}`);
+          }
 
-        if (!followUpResponse.ok) {
-          throw new Error(`HTTP error! status: ${followUpResponse.status}`);
-        }
+          const followUpReader = followUpResponse.body?.getReader();
+          if (!followUpReader) {
+            throw new Error("No response body");
+          }
 
-        const followUpReader = followUpResponse.body?.getReader();
-        if (!followUpReader) {
-          throw new Error("No response body");
-        }
+          // Read the follow-up response
+          let followUpMessage = "";
+          const followUpId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-        // Read the follow-up response
-        let followUpMessage = "";
-        const followUpId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          while (true) {
+            const { done, value } = await followUpReader.read();
+            if (done) break;
 
-        while (true) {
-          const { done, value } = await followUpReader.read();
-          if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(line.substring(6));
 
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(line.substring(6));
-
-                if (data.type === "text-delta" && data.delta) {
-                  followUpMessage += data.delta;
-                  const currentProject = projects.find(
-                    (p) => p.id === project.id,
-                  );
-                  const currentMessages = currentProject?.messages || [];
-                  const existing = currentMessages.find(
-                    (m) => m.id === followUpId,
-                  );
-                  if (existing) {
-                    setProjectMessages(
-                      project.id,
-                      currentMessages.map((m) =>
-                        m.id === followUpId
-                          ? { ...m, content: followUpMessage }
-                          : m,
-                      ),
+                  if (data.type === "text-delta" && data.delta) {
+                    followUpMessage += data.delta;
+                    const currentProject = projects.find(
+                      (p) => p.id === project.id,
                     );
-                  } else {
-                    addProjectMessage(project.id, {
-                      id: followUpId,
-                      role: "assistant",
-                      content: followUpMessage,
-                      createdAt: new Date(),
-                    });
+                    const currentMessages = currentProject?.messages || [];
+                    const existing = currentMessages.find(
+                      (m) => m.id === followUpId,
+                    );
+                    if (existing) {
+                      setProjectMessages(
+                        project.id,
+                        currentMessages.map((m) =>
+                          m.id === followUpId
+                            ? { ...m, content: followUpMessage }
+                            : m,
+                        ),
+                      );
+                    } else {
+                      addProjectMessage(project.id, {
+                        id: followUpId,
+                        role: "assistant",
+                        content: followUpMessage,
+                        createdAt: new Date(),
+                      });
+                    }
                   }
+                } catch (e) {
+                  // Skip invalid JSON
                 }
-              } catch (e) {
-                // Skip invalid JSON
               }
             }
           }
+        } catch (err) {
+          // Handle follow-up request error
+        } finally {
+          removeController(ctrl2);
         }
       }
     } catch (error: any) {
@@ -377,10 +378,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      if (input.trim()) {
+        void handleSend();
+      }
     }
   };
 
@@ -555,7 +558,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Type your message..."
             />
             <div className="mt-2 flex justify-end">
