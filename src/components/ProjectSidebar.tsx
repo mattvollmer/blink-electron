@@ -381,7 +381,7 @@ export const ProjectSidebar: React.FC = () => {
       <div className="p-4">
         <Button onClick={handleAddProject} className="w-full">
           <FolderPlus className="w-4 h-4 mr-2" />
-          Add Project
+          Add Agent
         </Button>
       </div>
 

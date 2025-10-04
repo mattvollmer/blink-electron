@@ -1,11 +1,11 @@
-import { spawn, ChildProcess } from "child_process";
+import { spawn, ChildProcess, exec as execCb } from "child_process";
 import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
-import { exec } from "child_process";
+import http from "node:http";
 
-const execPromise = promisify(exec);
+const execPromise = promisify(execCb);
 
 interface BlinkProcess {
   process: ChildProcess;
@@ -23,10 +23,6 @@ class BlinkProcessManager {
 
   private async killProcessOnPort(port: number): Promise<void> {
     try {
-      const { exec } = require("child_process");
-      const util = require("util");
-      const execPromise = util.promisify(exec);
-
       if (process.platform === "win32") {
         // Windows
         const { stdout } = await execPromise(`netstat -ano | findstr :${port}`);
@@ -92,7 +88,7 @@ class BlinkProcessManager {
         // Run the built agent with custom port via environment variable
         // Read .env.production to get API keys
         const envProdPath = path.join(projectPath, ".env.production");
-        let envVars: Record<string, string> = {};
+        const envVars: Record<string, string> = {};
 
         try {
           const envContent = fs.readFileSync(envProdPath, "utf-8");
@@ -174,14 +170,10 @@ class BlinkProcessManager {
         const checkPort = async (retries = 30): Promise<void> => {
           for (let i = 0; i < retries; i++) {
             try {
-              const http = require("http");
               await new Promise<void>((resolveCheck, rejectCheck) => {
-                const req = http.get(
-                  `http://127.0.0.1:${port}/`,
-                  (res: any) => {
-                    resolveCheck();
-                  },
-                );
+                const req = http.get(`http://127.0.0.1:${port}/`, () => {
+                  resolveCheck();
+                });
                 req.on("error", () => {
                   rejectCheck();
                 });

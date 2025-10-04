@@ -15,7 +15,9 @@ export const App: React.FC = () => {
       const id = state.currentProjectId;
       if (id) {
         state.setProjectMessages(id, []);
-        toast.success("Chat context cleared");
+        toast.success("Chat context cleared", {
+          duration: 2000,
+        });
       }
     });
     return unsubscribe;
@@ -49,10 +51,10 @@ export const App: React.FC = () => {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-2">
               <h3 className="text-lg font-medium text-muted-foreground">
-                No Project Selected
+                No Agent Selected
               </h3>
               <p className="text-sm text-muted-foreground">
-                Add a project to get started
+                Add an agent to get started
               </p>
             </div>
           </div>
