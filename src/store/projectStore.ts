@@ -15,6 +15,7 @@ export interface BlinkProject {
     createdAt: Date;
   }>;
   mode?: "run" | "edit";
+  editPort?: number;
 }
 
 interface ProjectStore {

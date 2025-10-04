@@ -97,7 +97,8 @@ ipcMain.handle(
   async (_event, projectId: string, projectPath: string, port: number) => {
     try {
       await blinkProcessManager.startProject(projectId, projectPath, port);
-      return { success: true };
+      const info = blinkProcessManager.getProjectInfo(projectId);
+      return { success: true, editPort: info?.editPort };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       return { success: false, error: message };
@@ -491,6 +492,11 @@ ipcMain.handle(
     }
   },
 );
+
+ipcMain.handle("get-project-info", async (_event, projectId: string) => {
+  const info = blinkProcessManager.getProjectInfo(projectId);
+  return info;
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

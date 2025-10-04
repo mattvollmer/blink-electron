@@ -73,15 +73,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   };
 
   useEffect(() => {
-    if (project.status === "running") {
-      const blinkClient = new Client({
-        baseUrl: `http://localhost:${project.port}`,
-      });
-      setClient(blinkClient);
-    } else {
-      setClient(null);
-    }
-  }, [project.status, project.port]);
+    const targetPort =
+      mode === "edit" && project.editPort ? project.editPort : project.port;
+    const blinkClient = new Client({
+      baseUrl: `http://127.0.0.1:${targetPort}`,
+    });
+    setClient(blinkClient);
+  }, [project.status, project.port, project.editPort, mode]);
 
   // Handle app-level stop-streams (fired before Cmd/Ctrl+R clears chat)
   useEffect(() => {
@@ -432,7 +430,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                     project.port,
                   );
                   if (result.success) {
-                    updateProject(project.id, { status: "running" });
+                    updateProject(project.id, {
+                      status: "running",
+                      editPort: result.editPort,
+                    });
                   } else {
                     updateProject(project.id, { status: "error" });
                   }
