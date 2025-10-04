@@ -542,13 +542,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               </div>
             </div>
           </div>
-          {isLoading && (
-            <Button onClick={handleStop} variant="outline">
+          <Button
+            onClick={input.trim() ? handleSend : handleStop}
+            disabled={!isLoading && !input.trim()}
+          >
+            {isLoading && !input.trim() ? (
               <Square className="w-4 h-4" />
-            </Button>
-          )}
-          <Button onClick={handleSend} disabled={!input.trim()}>
-            <Send className="w-4 h-4" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         </div>
       </div>
