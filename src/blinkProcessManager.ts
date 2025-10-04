@@ -88,7 +88,7 @@ class BlinkProcessManager {
         // Run the built agent with custom port via environment variable
         // Read .env.production to get API keys
         const envProdPath = path.join(projectPath, ".env.production");
-        let envVars: Record<string, string> = {};
+        const envVars: Record<string, string> = {};
 
         try {
           const envContent = fs.readFileSync(envProdPath, "utf-8");
