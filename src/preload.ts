@@ -18,6 +18,9 @@ const api = {
   checkBlinkProject: (projectPath: string) =>
     ipcRenderer.invoke('check-blink-project', projectPath),
   
+  checkDirectoryExists: (directoryPath: string) =>
+    ipcRenderer.invoke('check-directory-exists', directoryPath),
+  
   initBlinkProject: (projectPath: string) =>
     ipcRenderer.invoke('init-blink-project', projectPath),
   

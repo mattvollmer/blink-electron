@@ -33,6 +33,32 @@ export const ProjectSidebar: React.FC = () => {
     syncProjectStatuses();
   }, []); // Only run once on mount
 
+  // Monitor project directories for existence
+  useEffect(() => {
+    const checkDirectories = async () => {
+      for (const project of projects) {
+        const result = await window.electronAPI.checkDirectoryExists(project.path);
+        if (!result.exists) {
+          toast.error(`Project directory not found: ${project.name}`, {
+            description: 'The directory may have been moved or deleted',
+            action: {
+              label: 'Remove',
+              onClick: () => removeProject(project.id),
+            },
+          });
+        }
+      }
+    };
+
+    // Check immediately
+    checkDirectories();
+
+    // Check every 30 seconds
+    const interval = setInterval(checkDirectories, 30000);
+
+    return () => clearInterval(interval);
+  }, [projects, removeProject]);
+
   // Listen for authentication errors from Blink processes
   useEffect(() => {
     const unsubscribe = window.electronAPI.onBlinkLog((data) => {
