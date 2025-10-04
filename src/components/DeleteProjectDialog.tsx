@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,8 +6,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from './ui/dialog';
-import { Button } from './ui/button';
+} from "./ui/dialog";
+import { Button } from "./ui/button";
 
 interface DeleteProjectDialogProps {
   open: boolean;
@@ -36,7 +36,8 @@ export const DeleteProjectDialog: React.FC<DeleteProjectDialogProps> = ({
             Are you sure you want to remove <strong>{projectName}</strong>?
             <br />
             <br />
-            This will remove the project from Blink Desktop but will not delete any files from your computer.
+            This will remove the project from Blink Desktop but will not delete
+            any files from your computer.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,9 +6,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from './ui/dialog';
-import { Button } from './ui/button';
-import { FolderPlus } from 'lucide-react';
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { FolderPlus } from "lucide-react";
 
 interface InitProjectDialogProps {
   open: boolean;
@@ -23,7 +23,7 @@ export const InitProjectDialog: React.FC<InitProjectDialogProps> = ({
   onConfirm,
   projectPath,
 }) => {
-  const folderName = projectPath.split('/').pop() || 'this directory';
+  const folderName = projectPath.split("/").pop() || "this directory";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,20 +33,21 @@ export const InitProjectDialog: React.FC<InitProjectDialogProps> = ({
             <div className="p-2 rounded-lg bg-primary/10">
               <FolderPlus className="w-6 h-6 text-primary" />
             </div>
-            <DialogTitle className="text-xl">Create New Blink Agent</DialogTitle>
+            <DialogTitle className="text-xl">
+              Create New Blink Agent
+            </DialogTitle>
           </div>
           <DialogDescription className="text-base leading-relaxed pt-2">
-            <span className="font-medium text-foreground">{folderName}</span> isn't a Blink project yet.
+            <span className="font-medium text-foreground">{folderName}</span>{" "}
+            isn't a Blink project yet.
             <br />
             <br />
-            Click <span className="font-medium text-foreground">OK</span> to start building a new Blink agent in this directory.
+            Click <span className="font-medium text-foreground">OK</span> to
+            start building a new Blink agent in this directory.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
