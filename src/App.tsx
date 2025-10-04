@@ -15,7 +15,9 @@ export const App: React.FC = () => {
       const id = state.currentProjectId;
       if (id) {
         state.setProjectMessages(id, []);
-        toast.success("Chat context cleared");
+        toast.success("Chat context cleared", {
+          duration: 2000,
+        });
       }
     });
     return unsubscribe;
@@ -39,7 +41,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      <Toaster position="top-right" />
+      <Toaster position="top-center" closeButton />
       <ProjectSidebar />
 
       <div className="flex-1 flex flex-col">
