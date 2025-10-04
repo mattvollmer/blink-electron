@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useProjectStore } from "../store/projectStore";
 import { Button } from "./ui/button";
 import { FolderPlus, Play, Square, Trash2 } from "lucide-react";
@@ -29,6 +29,7 @@ export const ProjectSidebar: React.FC = () => {
   const [missingDirProjectId, setMissingDirProjectId] = useState<string>("");
   const [sidebarWidth, setSidebarWidth] = useState(256); // 16rem = 256px
   const [isResizing, setIsResizing] = useState(false);
+  const startupTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Sync project status on mount - check which projects are actually running
   useEffect(() => {
@@ -44,6 +45,15 @@ export const ProjectSidebar: React.FC = () => {
     };
     syncProjectStatuses();
   }, []); // Only run once on mount
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      for (const timeout of startupTimeoutsRef.current.values()) {
+        clearTimeout(timeout);
+      }
+    };
+  }, []);
 
   // Handle sidebar resizing
   useEffect(() => {
@@ -153,11 +163,29 @@ export const ProjectSidebar: React.FC = () => {
 
     updateProject(projectId, { status: "starting" });
 
+    // Set timeout to mark as error if startup takes too long
+    const timeoutId = setTimeout(() => {
+      const project = projects.find((p) => p.id === projectId);
+      if (project?.status === "starting") {
+        updateProject(projectId, { status: "error" });
+        toast.error(`Project startup timed out after 15 seconds`);
+      }
+      startupTimeoutsRef.current.delete(projectId);
+    }, 15000);
+    startupTimeoutsRef.current.set(projectId, timeoutId);
+
     const result = await window.electronAPI.startBlinkProject(
       projectId,
       projectPath,
       port,
     );
+
+    // Clear timeout if we got a result
+    const existingTimeout = startupTimeoutsRef.current.get(projectId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      startupTimeoutsRef.current.delete(projectId);
+    }
 
     if (result.success) {
       updateProject(projectId, { status: "running" });
@@ -168,6 +196,13 @@ export const ProjectSidebar: React.FC = () => {
   };
 
   const handleStopProject = async (projectId: string) => {
+    // Clear any pending timeout
+    const existingTimeout = startupTimeoutsRef.current.get(projectId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      startupTimeoutsRef.current.delete(projectId);
+    }
+
     await window.electronAPI.stopBlinkProject(projectId);
     updateProject(projectId, { status: "stopped" });
   };
@@ -326,7 +361,8 @@ export const ProjectSidebar: React.FC = () => {
                 >
                   <Play className="w-4 h-4" />
                 </button>
-              ) : project.status === "running" ? (
+              ) : project.status === "running" ||
+                project.status === "starting" ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
