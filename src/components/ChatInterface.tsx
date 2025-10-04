@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface ChatInterfaceProps {
   project: BlinkProject;
@@ -609,13 +615,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               }
             />
             <div className="mt-2 flex items-center justify-between text-xs">
-              <div
-                className={
-                  mode === "edit" ? "text-yellow-500" : "text-muted-foreground"
-                }
-              >
-                mode: {mode}
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={
+                        mode === "edit"
+                          ? "text-yellow-500 cursor-help"
+                          : "text-muted-foreground cursor-help"
+                      }
+                    >
+                      mode: {mode}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="start">
+                    {mode === "run" ? (
+                      <p>Chat with your agent to see how it behaves</p>
+                    ) : (
+                      <p>AI helps you build and modify your agent code</p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <div className="text-muted-foreground">
                 {isMac ? "Cmd" : "Ctrl"}+E: Switch to{" "}
                 {mode === "run" ? "edit" : "run"} • {isMac ? "Cmd" : "Ctrl"}+R:
