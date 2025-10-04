@@ -361,7 +361,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                             ),
                           }}
                         >
-                          {message.content}
+                          {message.content.replace(/<!-- toolName: .+? -->\n?/g, '')}
                         </ReactMarkdown>
                       )}
                     </div>
