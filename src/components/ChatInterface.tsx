@@ -145,6 +145,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       
       // If there were tool calls, make another request with the results
       if (hasTools && toolCalls.length > 0) {
+        // Display tool calls in the UI
+        const toolCallsMessage = {
+          id: assistantId + '-tools',
+          role: 'assistant' as const,
+          content: toolCalls.map(tool => {
+            const output = toolOutputs.get(tool.id);
+            return `🔧 **${tool.name}**\n\`\`\`json\nInput: ${JSON.stringify(tool.input, null, 2)}\n\nOutput: ${JSON.stringify(output, null, 2)}\n\`\`\``;
+          }).join('\n\n'),
+          createdAt: new Date(),
+        };
+        
+        setMessages((prev) => [
+          ...prev.filter(m => m.id !== assistantId),
+          { ...prev.find(m => m.id === assistantId)!, id: assistantId },
+          toolCallsMessage
+        ]);
+        
         // Build assistant message with tool calls in parts format
         const assistantParts: any[] = [];
         
