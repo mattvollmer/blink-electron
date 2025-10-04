@@ -296,7 +296,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col">
       <div className="border-b border-border p-4">
         <h2 className="text-lg font-semibold">{project.name}</h2>
         <p className="text-sm text-muted-foreground">Port: {project.port}</p>
