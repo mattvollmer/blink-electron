@@ -8,6 +8,12 @@ export interface BlinkProject {
   port: number;
   status: 'stopped' | 'starting' | 'running' | 'error';
   pid?: number;
+  messages?: Array<{
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    createdAt: Date;
+  }>;
 }
 
 interface ProjectStore {
@@ -20,6 +26,8 @@ interface ProjectStore {
   updateProject: (id: string, updates: Partial<BlinkProject>) => void;
   setCurrentProject: (id: string | null) => void;
   getCurrentProject: () => BlinkProject | undefined;
+  setProjectMessages: (projectId: string, messages: BlinkProject['messages']) => void;
+  addProjectMessage: (projectId: string, message: BlinkProject['messages'][0]) => void;
 }
 
 export const useProjectStore = create<ProjectStore>()(persist(
@@ -60,6 +68,24 @@ export const useProjectStore = create<ProjectStore>()(persist(
   getCurrentProject: () => {
     const { projects, currentProjectId } = get();
     return projects.find((p) => p.id === currentProjectId);
+  },
+
+  setProjectMessages: (projectId, messages) => {
+    set((state) => ({
+      projects: state.projects.map((p) => 
+        p.id === projectId ? { ...p, messages } : p
+      ),
+    }));
+  },
+
+  addProjectMessage: (projectId, message) => {
+    set((state) => ({
+      projects: state.projects.map((p) => 
+        p.id === projectId 
+          ? { ...p, messages: [...(p.messages || []), message] } 
+          : p
+      ),
+    }));
   },
 }),
   {

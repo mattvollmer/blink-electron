@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Client } from 'blink/client';
 import { UIMessage } from 'ai';
-import { BlinkProject } from '../store/projectStore';
+import { BlinkProject, useProjectStore } from '../store/projectStore';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Send, ChevronRight, ChevronDown, Copy } from 'lucide-react';
@@ -13,7 +13,8 @@ interface ChatInterfaceProps {
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { setProjectMessages, addProjectMessage } = useProjectStore();
+  const messages = project.messages || [];
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -67,7 +68,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       createdAt: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    addProjectMessage(project.id, userMessage);
     setInput('');
     setIsLoading(true);
     setIsThinking(true);
@@ -76,7 +77,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
     try {
       // Convert messages to the format expected by Blink runtime
-      const formattedMessages = [...messages, userMessage].map(msg => ({
+      const formattedMessages = [...project.messages, userMessage].map(msg => ({
         role: msg.role,
         parts: msg.parts || [
           {
@@ -130,24 +131,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               // Handle text deltas
               if (data.type === 'text-delta' && data.delta) {
                 assistantMessage += data.delta;
-                setMessages((prev) => {
-                  const existing = prev.find((m) => m.id === assistantId);
-                  if (existing) {
-                    return prev.map((m) =>
-                      m.id === assistantId ? { ...m, content: assistantMessage } : m
-                    );
-                  } else {
-                    return [
-                      ...prev,
-                      {
-                        id: assistantId,
-                        role: 'assistant' as const,
-                        content: assistantMessage,
-                        createdAt: new Date(),
-                      },
-                    ];
-                  }
-                });
+                const existing = messages.find((m) => m.id === assistantId);
+                if (existing) {
+                  setProjectMessages(project.id, messages.map((m) =>
+                    m.id === assistantId ? { ...m, content: assistantMessage } : m
+                  ));
+                } else {
+                  addProjectMessage(project.id, {
+                    id: assistantId,
+                    role: 'assistant',
+                    content: assistantMessage,
+                    createdAt: new Date(),
+                  });
+                }
               }
               
               // Track tool calls
@@ -187,10 +183,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           createdAt: new Date(Date.now() + 1), // Ensure it comes after first message
         };
         
-        setMessages((prev) => [
-          ...prev,
-          toolCallsMessage
-        ]);
+        addProjectMessage(project.id, toolCallsMessage);
         
         // Collapse tool message by default
         setCollapsedTools(prev => new Set([...prev, toolCallsMessage.id]));
@@ -267,24 +260,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 
                 if (data.type === 'text-delta' && data.delta) {
                   followUpMessage += data.delta;
-                  setMessages((prev) => {
-                    const existing = prev.find((m) => m.id === followUpId);
-                    if (existing) {
-                      return prev.map((m) =>
-                        m.id === followUpId ? { ...m, content: followUpMessage } : m
-                      );
-                    } else {
-                      return [
-                        ...prev,
-                        {
-                          id: followUpId,
-                          role: 'assistant' as const,
-                          content: followUpMessage,
-                          createdAt: new Date(),
-                        },
-                      ];
-                    }
-                  });
+                  const existing = messages.find((m) => m.id === followUpId);
+                  if (existing) {
+                    setProjectMessages(project.id, messages.map((m) =>
+                      m.id === followUpId ? { ...m, content: followUpMessage } : m
+                    ));
+                  } else {
+                    addProjectMessage(project.id, {
+                      id: followUpId,
+                      role: 'assistant',
+                      content: followUpMessage,
+                      createdAt: new Date(),
+                    });
+                  }
                 }
               } catch (e) {
                 // Skip invalid JSON
