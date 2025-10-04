@@ -4,7 +4,7 @@ import { UIMessage } from 'ai';
 import { BlinkProject } from '../store/projectStore';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send } from 'lucide-react';
+import { Send, ChevronRight, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -342,8 +342,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                         }}
                         className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                       >
-                        <span>{collapsedTools.has(message.id) ? '▶' : '▼'}</span>
-                        <span>Tool Call Details</span>
+                        {collapsedTools.has(message.id) ? (
+                          <ChevronRight className="w-3 h-3" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3" />
+                        )}
+                        <span>🔧 {message.content.match(/\*\*(.+?)\*\*/)?.[1] || 'Tool Call'}</span>
                       </button>
                       {!collapsedTools.has(message.id) && (
                         <ReactMarkdown
