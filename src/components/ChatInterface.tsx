@@ -129,7 +129,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     console.log(
       `[handleSend] Mode: ${mode}, Client baseUrl: ${client.baseUrl}`,
     );
-    const userMessage = input.trim();
+    const userMessageContent = input.trim();
+    const userMessage: BlinkProject["messages"][0] = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      role: "user",
+      content: userMessageContent,
+      createdAt: new Date(),
+    };
+
+    addProjectMessage(project.id, userMessage);
     setInput("");
     setIsLoading(true);
     setIsThinking(true);
@@ -140,17 +148,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
     try {
       // Convert messages to the format expected by Blink runtime
-      const formattedMessages = [...(project.messages || []), userMessage].map(
-        (msg: any) => ({
-          role: msg.role,
-          parts: msg.parts ?? [
-            {
-              type: "text",
-              text: msg.content,
-            },
-          ],
-        }),
-      );
+      const formattedMessages = messages.concat([userMessage]).map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        parts: [
+          {
+            type: "text" as const,
+            text: msg.content,
+          },
+        ],
+      }));
 
       // Use fetch directly to the agent endpoint
       const response = await fetch(
