@@ -145,6 +145,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       
       // If there were tool calls, make another request with the results
       if (hasTools && toolCalls.length > 0) {
+        // Small delay to ensure first message is fully rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Display tool calls in the UI
         const toolCallsMessage = {
           id: assistantId + '-tools',
