@@ -6,8 +6,27 @@ import { promisify } from "util";
 import http from "node:http";
 import * as blink from "blink";
 import { convertToModelMessages, streamText } from "ai";
+import { homedir } from "os";
 
 const execPromise = promisify(execCb);
+
+// Get Blink auth token from XDG data directory
+function getBlinkAuthToken(): string | undefined {
+  try {
+    // XDG data directory for Blink (matches xdg-app-paths behavior)
+    const xdgDataHome =
+      process.env.XDG_DATA_HOME || path.join(homedir(), ".local", "share");
+    const authPath = path.join(xdgDataHome, "blink", "auth.json");
+
+    if (fs.existsSync(authPath)) {
+      const data = JSON.parse(fs.readFileSync(authPath, "utf8"));
+      return data.token;
+    }
+  } catch (error) {
+    console.error("[ProcessManager] Error reading Blink auth token:", error);
+  }
+  return undefined;
+}
 
 interface BlinkProcess {
   process: ChildProcess;
@@ -218,6 +237,19 @@ class BlinkProcessManager {
 
         // Start a simple Edit Agent on a random port
         (async () => {
+          // Set Blink auth token if available
+          const blinkToken = getBlinkAuthToken();
+          if (blinkToken) {
+            process.env.BLINK_TOKEN = blinkToken;
+            console.log(
+              `[ProcessManager] Using Blink auth token for edit agent`,
+            );
+          } else {
+            console.warn(
+              `[ProcessManager] No Blink auth token found. Edit agent will not be able to use the model gateway.`,
+            );
+          }
+
           const editPort = await getRandomPort();
           console.log(
             `[ProcessManager] Starting edit agent for ${projectId} on port ${editPort}`,
