@@ -14,9 +14,19 @@ export const App: React.FC = () => {
       const state = useProjectStore.getState();
       const id = state.currentProjectId;
       if (id) {
+        // Clear messages
         state.setProjectMessages(id, []);
-        toast.success("Chat context cleared", {
-          duration: 2000,
+
+        // Rebuild the project
+        window.electronAPI.rebuildProject(id).then((result) => {
+          if (result.success && result.editPort !== undefined) {
+            // Update editPort in store after rebuild
+            state.updateProject(id, { editPort: result.editPort });
+            console.log(
+              `[App] Updated editPort after rebuild: ${result.editPort}`,
+            );
+          }
+          toast.success("Chat context cleared");
         });
       }
     });
