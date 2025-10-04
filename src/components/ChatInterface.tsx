@@ -524,7 +524,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           </Button>
         </div>
         <div className="mt-2 text-xs text-muted-foreground">
-          {isMac ? "Cmd" : "Ctrl"}+R clears chat context
+          {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
         </div>
       </div>
     </div>
