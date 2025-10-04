@@ -13,9 +13,10 @@ interface ChatInterfaceProps {
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
-  const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [collapsedTools, setCollapsedTools] = useState<Set<string>>(new Set());
   const [client, setClient] = useState<Client | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -165,6 +166,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           ...prev,
           toolCallsMessage
         ]);
+        
+        // Collapse tool message by default
+        setCollapsedTools(prev => new Set([...prev, toolCallsMessage.id]));
         
         // Build assistant message with tool calls in parts format
         const assistantParts: any[] = [];
@@ -316,7 +320,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[50%] rounded-lg p-3 ${
                     message.role === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : isToolCall
@@ -326,19 +330,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 >
                   {isToolCall ? (
                     <div className="text-xs font-mono space-y-2">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          pre: ({ node, ...props }) => (
-                            <pre className="text-[10px] overflow-x-auto" {...props} />
-                          ),
-                          code: ({ node, ...props }) => (
-                            <code className="text-[10px]" {...props} />
-                          ),
+                      <button
+                        onClick={() => {
+                          const newCollapsed = new Set(collapsedTools);
+                          if (newCollapsed.has(message.id)) {
+                            newCollapsed.delete(message.id);
+                          } else {
+                            newCollapsed.add(message.id);
+                          }
+                          setCollapsedTools(newCollapsed);
                         }}
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                       >
-                        {message.content}
-                      </ReactMarkdown>
+                        <span>{collapsedTools.has(message.id) ? '▶' : '▼'}</span>
+                        <span>Tool Call Details</span>
+                      </button>
+                      {!collapsedTools.has(message.id) && (
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            pre: ({ node, ...props }) => (
+                              <pre className="text-[10px] overflow-x-auto" {...props} />
+                            ),
+                            code: ({ node, ...props }) => (
+                              <code className="text-[10px]" {...props} />
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      )}
                     </div>
                   ) : (
                     <div className={`prose prose-sm max-w-none ${
