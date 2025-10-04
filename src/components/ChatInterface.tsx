@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Client } from "blink/client";
-import { UIMessage } from "ai";
 import { BlinkProject, useProjectStore } from "../store/projectStore";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -111,7 +110,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const handleSend = async () => {
     if (!input.trim() || !client || project.status !== "running") return;
 
-    const userMessage: UIMessage = {
+    const userMessage: BlinkProject["messages"][0] = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       role: "user",
       content: input,
@@ -130,9 +129,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     try {
       // Convert messages to the format expected by Blink runtime
       const formattedMessages = [...(project.messages || []), userMessage].map(
-        (msg) => ({
+        (msg: any) => ({
           role: msg.role,
-          parts: msg.parts || [
+          parts: msg.parts ?? [
             {
               type: "text",
               text: msg.content,
@@ -290,9 +289,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             ...messages,
             userMessage,
             assistantMessageWithTools,
-          ].map((msg) => ({
+          ].map((msg: any) => ({
             role: msg.role,
-            parts: msg.parts || [
+            parts: msg.parts ?? [
               {
                 type: "text",
                 text: msg.content,

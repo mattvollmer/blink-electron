@@ -43,7 +43,10 @@ const api = {
   ) => {
     const subscription = (_event: any, data: any) => callback(data);
     ipcRenderer.on("blink:log", subscription);
-    return () => ipcRenderer.removeListener("blink:log", subscription);
+    return () => {
+      ipcRenderer.removeListener("blink:log", subscription);
+      // Ensuring the return type is void
+    };
   },
 
   onProcessExit: (
@@ -51,21 +54,30 @@ const api = {
   ) => {
     const subscription = (_event: any, data: any) => callback(data);
     ipcRenderer.on("blink:process-exit", subscription);
-    return () => ipcRenderer.removeListener("blink:process-exit", subscription);
+    return () => {
+      ipcRenderer.removeListener("blink:process-exit", subscription);
+      // Ensuring the return type is void
+    };
   },
 
   // New: app-level refresh/clear chat event triggered by Cmd/Ctrl+R
   onRefreshChat: (callback: () => void) => {
     const subscription = () => callback();
     ipcRenderer.on("app:refresh-chat", subscription);
-    return () => ipcRenderer.removeListener("app:refresh-chat", subscription);
+    return () => {
+      ipcRenderer.removeListener("app:refresh-chat", subscription);
+      // Ensuring the return type is void
+    };
   },
 
   // Signal to stop any active streams (fired before chat clear)
   onStopStreams: (callback: () => void) => {
     const subscription = () => callback();
     ipcRenderer.on("app:stop-streams", subscription);
-    return () => ipcRenderer.removeListener("app:stop-streams", subscription);
+    return () => {
+      ipcRenderer.removeListener("app:stop-streams", subscription);
+      // Ensuring the return type is void
+    };
   },
 };
 

@@ -33,7 +33,7 @@ const createWindow = () => {
               { role: "about" },
               { type: "separator" },
               { role: "quit" },
-            ],
+            ] as Electron.MenuItemConstructorOptions[],
           },
         ]
       : []),
@@ -52,7 +52,7 @@ const createWindow = () => {
         },
         { type: "separator" },
         { role: "toggleDevTools" },
-      ],
+      ] as Electron.MenuItemConstructorOptions[],
     },
   ];
   const menu = Menu.buildFromTemplate(menuTemplate);

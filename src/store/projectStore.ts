@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export interface BlinkProject {
   id: string;
@@ -39,8 +39,8 @@ interface ProjectStore {
 export const useProjectStore = create<ProjectStore>()(
   persist(
     (set, get) => ({
-      projects: [],
-      currentProjectId: null,
+      projects: [] as BlinkProject[],
+      currentProjectId: null as string | null,
 
       addProject: (project) => {
         const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -100,7 +100,7 @@ export const useProjectStore = create<ProjectStore>()(
     }),
     {
       name: "blink-project-store",
-      getStorage: () => localStorage,
+      storage: createJSONStorage(() => localStorage),
     },
   ),
 );

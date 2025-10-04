@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 
 // https://vitejs.dev/config
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ['ws', 'bufferutil', 'utf-8-validate'],
+      external: ["ws", "bufferutil", "utf-8-validate"],
     },
   },
 });
