@@ -157,8 +157,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         };
         
         setMessages((prev) => [
-          ...prev.filter(m => m.id !== assistantId),
-          { ...prev.find(m => m.id === assistantId)!, id: assistantId },
+          ...prev,
           toolCallsMessage
         ]);
         
