@@ -399,16 +399,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         <div className="text-center space-y-4">
           {project.status === "starting" ? (
             <>
-              <h3 className="text-lg font-medium">Starting Project...</h3>
+              <h3 className="text-lg font-medium">Starting Agent...</h3>
               <p className="text-muted-foreground">
                 Please wait while the agent starts up
               </p>
             </>
           ) : (
             <>
-              <h3 className="text-lg font-medium">Project Not Running</h3>
+              <h3 className="text-lg font-medium">Agent Not Running</h3>
               <p className="text-muted-foreground">
-                Start the project to begin chatting
+                Start the agent to begin chatting
               </p>
               <Button
                 onClick={async () => {
@@ -428,7 +428,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 className="mt-4"
               >
                 <Play className="w-4 h-4 mr-2" />
-                Start Project
+                Start Agent
               </Button>
             </>
           )}
