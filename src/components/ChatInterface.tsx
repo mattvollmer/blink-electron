@@ -47,14 +47,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setIsLoading(true);
 
     try {
-      const stream = await client.chat({
+      // Convert messages to the format expected by the agent (only role and content)
+      const formattedMessages = [...messages, userMessage].map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+      
+      const chatPayload = {
         chat: {
           id: 'default',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          messages: [...messages, userMessage],
+          messages: formattedMessages,
         },
-      });
+      };
+      console.log('Sending chat payload:', JSON.stringify(chatPayload, null, 2));
+      
+      const stream = await client.chat(chatPayload);
 
       const reader = stream.getReader();
       let assistantMessage = '';
