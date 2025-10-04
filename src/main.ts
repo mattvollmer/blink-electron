@@ -275,7 +275,7 @@ ipcMain.handle('update-agent-api-key', async (event, projectPath: string, apiKey
     
     if (provider === 'blink') {
       // For Blink, just add the API key to env
-      envKey = 'BLINK_API_KEY';
+      envKey = 'BLINK_TOKEN';
     } else if (provider === 'anthropic') {
       envKey = 'ANTHROPIC_API_KEY';
       // Also update agent.ts to use anthropic directly
