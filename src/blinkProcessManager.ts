@@ -234,6 +234,29 @@ class BlinkProcessManager {
               console.log(
                 `[Edit Agent] Converted ${converted.length} model messages`,
               );
+
+              // Add system prompt to indicate this is Edit mode
+              const systemPrompt = {
+                role: "system" as const,
+                content: `You are in EDIT MODE. Your role is to help the user build, modify, and debug their Blink agent code. You are NOT the user's agent - you are an AI assistant helping them develop their agent. The user's agent files are located at: ${projectPath}
+
+When the user asks questions or requests changes, you should:
+- Help them understand their agent's code
+- Suggest improvements to their agent
+- Debug issues in their agent
+- Explain how Blink agents work
+- Guide them through implementing new features
+
+You are a development assistant, not the production agent.`,
+              };
+              converted.unshift(systemPrompt);
+              console.log(
+                `[Edit Agent] Added system prompt. Total messages now: ${converted.length}`,
+              );
+              console.log(
+                `[Edit Agent] First message role: ${converted[0]?.role}, content length: ${converted[0]?.content?.length}`,
+              );
+
               return streamText({
                 model: blink.model("anthropic/claude-sonnet-4.5"),
                 messages: converted,
