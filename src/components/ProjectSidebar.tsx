@@ -281,7 +281,7 @@ export const ProjectSidebar: React.FC = () => {
                     e.stopPropagation();
                     handleStartProject(project.id, project.path, project.port);
                   }}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300"
                 >
                   <Play className="w-4 h-4" />
                 </button>
@@ -291,7 +291,7 @@ export const ProjectSidebar: React.FC = () => {
                     e.stopPropagation();
                     handleStopProject(project.id);
                   }}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300"
                 >
                   <Square className="w-4 h-4" />
                 </button>
