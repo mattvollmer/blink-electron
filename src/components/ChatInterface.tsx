@@ -609,16 +609,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               }
             />
             <div className="mt-2 flex items-center justify-between text-xs">
-              <div className="text-muted-foreground">
-                {isMac ? "Cmd" : "Ctrl"}+E: Toggle mode •{" "}
-                {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
-              </div>
               <div
                 className={
                   mode === "edit" ? "text-yellow-500" : "text-muted-foreground"
                 }
               >
                 mode: {mode}
+              </div>
+              <div className="text-muted-foreground">
+                {isMac ? "Cmd" : "Ctrl"}+E: Switch to{" "}
+                {mode === "run" ? "edit" : "run"} • {isMac ? "Cmd" : "Ctrl"}+R:
+                Clears chat
               </div>
             </div>
           </div>
