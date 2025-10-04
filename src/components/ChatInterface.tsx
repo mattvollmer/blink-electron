@@ -169,8 +169,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       }));
 
       // Use fetch directly to the agent endpoint
+      const targetPort =
+        mode === "edit" && project.editPort ? project.editPort : project.port;
+      console.log(
+        `[handleSend] Fetching from port ${targetPort} (mode: ${mode})`,
+      );
       const response = await fetch(
-        `http://localhost:${project.port}/_agent/chat`,
+        `http://localhost:${targetPort}/_agent/chat`,
         {
           method: "POST",
           headers: {
