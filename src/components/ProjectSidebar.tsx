@@ -210,7 +210,7 @@ export const ProjectSidebar: React.FC = () => {
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium truncate">{project.name}</h3>
-                <p className="text-xs text-muted-foreground truncate">{project.path}</p>
+                <p className="text-xs text-muted-foreground truncate" style={{ direction: 'rtl', textAlign: 'left' }}>{project.path}</p>
               </div>
               <button
                 onClick={(e) => {
