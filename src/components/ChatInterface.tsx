@@ -27,7 +27,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const activeControllersRef = useRef<Set<AbortController>>(new Set());
+
+  const addController = (ctrl: AbortController) => {
+    activeControllersRef.current.add(ctrl);
+    setIsLoading(true);
+  };
+
+  const removeController = (ctrl: AbortController) => {
+    activeControllersRef.current.delete(ctrl);
+    setIsLoading(activeControllersRef.current.size > 0);
+  };
+
+  const abortAllControllers = () => {
+    for (const ctrl of activeControllersRef.current) {
+      try {
+        ctrl.abort();
+      } catch {}
+    }
+    activeControllersRef.current.clear();
+    setIsLoading(false);
+    setIsThinking(false);
+  };
+
   const isMac =
     typeof navigator !== "undefined" &&
     navigator.platform.toLowerCase().includes("mac");
@@ -46,12 +68,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   // Handle app-level stop-streams (fired before Cmd/Ctrl+R clears chat)
   useEffect(() => {
     const unsubscribe = window.electronAPI.onStopStreams(() => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-      setIsLoading(false);
-      setIsThinking(false);
+      abortAllControllers();
     });
     return unsubscribe;
   }, []);
@@ -81,12 +98,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   };
 
   const handleStop = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setIsLoading(false);
-    setIsThinking(false);
+    abortAllControllers();
   };
 
   const handleSend = async () => {
@@ -106,8 +118,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     console.log("Setting isThinking to true");
     setShouldAutoScroll(true); // Always scroll when user sends a message
 
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
+    const ctrl = new AbortController();
+    addController(ctrl);
 
     try {
       // Convert messages to the format expected by Blink runtime
@@ -137,7 +149,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ messages: formattedMessages }),
-          signal: abortControllerRef.current.signal,
+          signal: ctrl.signal,
         },
       );
 
@@ -356,15 +368,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         }
       }
     } catch (error: any) {
-      console.error("Error sending message:", error);
-      // Don't show error if it was an intentional abort
-      if (error.name !== "AbortError") {
-        // Auth dialog will handle authentication errors automatically
+      if (error?.name !== "AbortError") {
+        console.error("Error sending message:", error);
       }
     } finally {
-      setIsLoading(false);
-      setIsThinking(false);
-      abortControllerRef.current = null;
+      removeController(ctrl);
+      setIsThinking(activeControllersRef.current.size > 0);
     }
   };
 
