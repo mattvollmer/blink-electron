@@ -2,12 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
 export const ThemeToggle: React.FC = () => {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
-    // Check system preference on mount
+    // Set dark mode as default on mount
     const isDark = document.documentElement.classList.contains('dark');
-    setTheme(isDark ? 'dark' : 'light');
+    if (!isDark) {
+      document.documentElement.classList.add('dark');
+      setTheme('dark');
+    } else {
+      setTheme('dark');
+    }
   }, []);
 
   const toggleTheme = () => {
