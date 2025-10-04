@@ -13,7 +13,7 @@ interface ChatInterfaceProps {
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
-  const { setProjectMessages, addProjectMessage } = useProjectStore();
+  const { setProjectMessages, addProjectMessage, projects } = useProjectStore();
   const messages = project.messages || [];
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -131,9 +131,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               // Handle text deltas
               if (data.type === 'text-delta' && data.delta) {
                 assistantMessage += data.delta;
-                const existing = messages.find((m) => m.id === assistantId);
+                const currentProject = projects.find(p => p.id === project.id);
+                const currentMessages = currentProject?.messages || [];
+                const existing = currentMessages.find((m) => m.id === assistantId);
                 if (existing) {
-                  setProjectMessages(project.id, messages.map((m) =>
+                  setProjectMessages(project.id, currentMessages.map((m) =>
                     m.id === assistantId ? { ...m, content: assistantMessage } : m
                   ));
                 } else {
@@ -260,9 +262,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 
                 if (data.type === 'text-delta' && data.delta) {
                   followUpMessage += data.delta;
-                  const existing = messages.find((m) => m.id === followUpId);
+                  const currentProject = projects.find(p => p.id === project.id);
+                  const currentMessages = currentProject?.messages || [];
+                  const existing = currentMessages.find((m) => m.id === followUpId);
                   if (existing) {
-                    setProjectMessages(project.id, messages.map((m) =>
+                    setProjectMessages(project.id, currentMessages.map((m) =>
                       m.id === followUpId ? { ...m, content: followUpMessage } : m
                     ));
                   } else {
