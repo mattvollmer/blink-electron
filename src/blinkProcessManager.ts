@@ -69,6 +69,9 @@ class BlinkProcessManager {
     projectPath: string,
     port: number,
   ): Promise<void> {
+    console.log(
+      `[ProcessManager] Starting project ${projectId} at ${projectPath}, port: ${port}`,
+    );
     if (this.processes.has(projectId)) {
       throw new Error(`Project ${projectId} is already running`);
     }
@@ -170,6 +173,9 @@ class BlinkProcessManager {
           projectPath,
         };
         this.processes.set(projectId, proc);
+        console.log(
+          `[ProcessManager] Stored process for ${projectId}, port: ${port}`,
+        );
 
         // Wait for the agent to actually be listening on the port
         const checkPort = async (retries = 30): Promise<void> => {
@@ -213,6 +219,9 @@ class BlinkProcessManager {
         // Start a simple Edit Agent on a random port
         (async () => {
           const editPort = await getRandomPort();
+          console.log(
+            `[ProcessManager] Starting edit agent for ${projectId} on port ${editPort}`,
+          );
           const editAgent = blink.agent();
           editAgent.on("chat", async ({ messages }) => {
             const converted = convertToModelMessages(messages, {
@@ -231,8 +240,10 @@ class BlinkProcessManager {
           if (p) {
             p.editPort = editPort;
             p.editServer = server;
+            console.log(
+              `[ProcessManager] Edit agent ready for ${projectId}, editPort: ${editPort}`,
+            );
           }
-          console.log(`[${projectId}] Edit agent ready on port ${editPort}`);
           if (this.processes.has(projectId)) {
             resolve();
           } else {

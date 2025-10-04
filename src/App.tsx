@@ -50,6 +50,9 @@ export const App: React.FC = () => {
           const project = state.projects.find((p) => p.id === id);
           if (project) {
             const newMode = project.mode === "edit" ? "run" : "edit";
+            console.log(
+              `[Global Mode Toggle] ProjectId: ${id}, Current: ${project.mode ?? "run"}, New: ${newMode}`,
+            );
             state.updateProject(id, { mode: newMode });
           }
         }

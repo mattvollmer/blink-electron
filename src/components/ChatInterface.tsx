@@ -69,12 +69,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const mode = project.mode ?? "run";
   const toggleMode = () => {
     const { updateProject } = useProjectStore.getState();
+    console.log(
+      `[Mode Toggle] Switching from ${mode} to ${mode === "run" ? "edit" : "run"}`,
+    );
     updateProject(project.id, { mode: mode === "run" ? "edit" : "run" });
   };
 
   useEffect(() => {
     const targetPort =
       mode === "edit" && project.editPort ? project.editPort : project.port;
+    console.log(
+      `[Client Init] Mode: ${mode}, Using port: ${targetPort}, editPort: ${project.editPort}, runPort: ${project.port}`,
+    );
     const blinkClient = new Client({
       baseUrl: `http://127.0.0.1:${targetPort}`,
     });
@@ -118,16 +124,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || !client || project.status !== "running") return;
+    if (!input.trim() || !client) return;
 
-    const userMessage: BlinkProject["messages"][0] = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      role: "user",
-      content: input,
-      createdAt: new Date(),
-    };
-
-    addProjectMessage(project.id, userMessage);
+    console.log(
+      `[handleSend] Mode: ${mode}, Client baseUrl: ${client.baseUrl}`,
+    );
+    const userMessage = input.trim();
     setInput("");
     setIsLoading(true);
     setIsThinking(true);
