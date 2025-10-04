@@ -523,8 +523,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <div className="mt-2 text-xs text-muted-foreground">
-          {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
+        <div className="mt-2 flex justify-end">
+          <div className="text-xs text-muted-foreground">
+            {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
+          </div>
         </div>
       </div>
     </div>
