@@ -81,7 +81,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       let assistantMessage = '';
       const assistantId = Date.now().toString();
       const decoder = new TextDecoder();
-      let toolOutputs: Array<{name: string, output: any}> = [];
+      let toolCalls: Array<{id: string, name: string, input: any}> = [];
+      let toolOutputs: Map<string, any> = new Map();
+      let hasTools = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -120,12 +122,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 });
               }
               
-              // Handle tool outputs
-              if (data.type === 'tool-output-available') {
-                toolOutputs.push({
-                  name: data.toolName || 'unknown',
-                  output: data.output
+              // Track tool calls
+              if (data.type === 'tool-input-available') {
+                hasTools = true;
+                toolCalls.push({
+                  id: data.toolCallId,
+                  name: data.toolName,
+                  input: data.input
                 });
+              }
+              
+              // Track tool outputs
+              if (data.type === 'tool-output-available') {
+                toolOutputs.set(data.toolCallId, data.output);
               }
             } catch (e) {
               // Skip invalid JSON
@@ -134,18 +143,107 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         }
       }
       
-      // After stream ends, append tool outputs to message if any
-      if (toolOutputs.length > 0) {
-        let toolText = '\n\n';
-        for (const tool of toolOutputs) {
-          toolText += `🔧 **${tool.name}**\n\`\`\`json\n${JSON.stringify(tool.output, null, 2)}\n\`\`\`\n\n`;
+      // If there were tool calls, make another request with the results
+      if (hasTools && toolCalls.length > 0) {
+        // Build assistant message with tool results in parts format
+        const assistantParts: any[] = [
+          { type: 'text', text: assistantMessage }
+        ];
+        
+        for (const tool of toolCalls) {
+          assistantParts.push({
+            type: `tool-${tool.name}`,
+            toolCallId: tool.id,
+            input: tool.input,
+            output: toolOutputs.get(tool.id)
+          });
         }
-        assistantMessage += toolText;
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId ? { ...m, content: assistantMessage } : m
-          )
-        );
+        
+        const assistantMessageWithTools = {
+          id: assistantId,
+          role: 'assistant' as const,
+          parts: assistantParts,
+          content: assistantMessage,
+          createdAt: new Date(),
+        };
+        
+        // Add assistant message to messages
+        setMessages((prev) => [
+          ...prev.filter(m => m.id !== assistantId),
+          assistantMessageWithTools
+        ]);
+        
+        // Make follow-up request with tool results
+        const followUpMessages = [...messages, userMessage, assistantMessageWithTools].map(msg => ({
+          role: msg.role,
+          parts: msg.parts || [
+            {
+              type: 'text',
+              text: msg.content,
+            }
+          ],
+        }));
+        
+        const followUpResponse = await fetch(`http://localhost:${project.port}/_agent/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ messages: followUpMessages }),
+        });
+
+        if (!followUpResponse.ok) {
+          throw new Error(`HTTP error! status: ${followUpResponse.status}`);
+        }
+
+        const followUpReader = followUpResponse.body?.getReader();
+        if (!followUpReader) {
+          throw new Error('No response body');
+        }
+        
+        // Read the follow-up response
+        let followUpMessage = '';
+        const followUpId = Date.now().toString() + '-followup';
+        
+        while (true) {
+          const { done, value } = await followUpReader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                
+                if (data.type === 'text-delta' && data.delta) {
+                  followUpMessage += data.delta;
+                  setMessages((prev) => {
+                    const existing = prev.find((m) => m.id === followUpId);
+                    if (existing) {
+                      return prev.map((m) =>
+                        m.id === followUpId ? { ...m, content: followUpMessage } : m
+                      );
+                    } else {
+                      return [
+                        ...prev,
+                        {
+                          id: followUpId,
+                          role: 'assistant' as const,
+                          content: followUpMessage,
+                          createdAt: new Date(),
+                        },
+                      ];
+                    }
+                  });
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
