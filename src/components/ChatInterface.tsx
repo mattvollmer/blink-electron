@@ -81,6 +81,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       let assistantMessage = '';
       const assistantId = Date.now().toString();
       const decoder = new TextDecoder();
+      let toolOutputs: Array<{name: string, output: any}> = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -118,11 +119,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                   }
                 });
               }
+              
+              // Handle tool outputs
+              if (data.type === 'tool-output-available') {
+                toolOutputs.push({
+                  name: data.toolName || 'unknown',
+                  output: data.output
+                });
+              }
             } catch (e) {
               // Skip invalid JSON
             }
           }
         }
+      }
+      
+      // After stream ends, append tool outputs to message if any
+      if (toolOutputs.length > 0) {
+        let toolText = '\n\n';
+        for (const tool of toolOutputs) {
+          toolText += `🔧 **${tool.name}**\n\`\`\`json\n${JSON.stringify(tool.output, null, 2)}\n\`\`\`\n\n`;
+        }
+        assistantMessage += toolText;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: assistantMessage } : m
+          )
+        );
       }
     } catch (error) {
       console.error('Error sending message:', error);
