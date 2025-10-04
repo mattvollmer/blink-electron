@@ -145,17 +145,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       
       // If there were tool calls, make another request with the results
       if (hasTools && toolCalls.length > 0) {
-        // Build assistant message with tool results in parts format
-        const assistantParts: any[] = [
-          { type: 'text', text: assistantMessage }
-        ];
+        // Build assistant message with tool calls in parts format
+        const assistantParts: any[] = [];
+        
+        if (assistantMessage) {
+          assistantParts.push({ type: 'text', text: assistantMessage });
+        }
         
         for (const tool of toolCalls) {
           assistantParts.push({
-            type: 'tool_result',
+            type: `tool-${tool.name}`,
             toolCallId: tool.id,
-            toolName: tool.name,
-            result: toolOutputs.get(tool.id)
+            state: 'output-available',
+            input: tool.input,
+            output: toolOutputs.get(tool.id)
           });
         }
         
