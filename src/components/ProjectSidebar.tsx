@@ -5,6 +5,7 @@ import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
 import { InitProjectDialog } from './InitProjectDialog';
 import { AuthRequiredDialog } from './AuthRequiredDialog';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
+import { MissingDirectoryDialog } from './MissingDirectoryDialog';
 import { ThemeToggle } from './ThemeToggle';
 import { toast } from 'sonner';
 
@@ -13,10 +14,12 @@ export const ProjectSidebar: React.FC = () => {
   const [showInitDialog, setShowInitDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showMissingDirDialog, setShowMissingDirDialog] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
   const [authProjectPath, setAuthProjectPath] = useState<string>('');
   const [authProjectId, setAuthProjectId] = useState<string>('');
   const [deleteProjectId, setDeleteProjectId] = useState<string>('');
+  const [missingDirProjectId, setMissingDirProjectId] = useState<string>('');
 
   // Sync project status on mount - check which projects are actually running
   useEffect(() => {
@@ -32,32 +35,6 @@ export const ProjectSidebar: React.FC = () => {
     };
     syncProjectStatuses();
   }, []); // Only run once on mount
-
-  // Monitor project directories for existence
-  useEffect(() => {
-    const checkDirectories = async () => {
-      for (const project of projects) {
-        const result = await window.electronAPI.checkDirectoryExists(project.path);
-        if (!result.exists) {
-          toast.error(`Project directory not found: ${project.name}`, {
-            description: 'The directory may have been moved or deleted',
-            action: {
-              label: 'Remove',
-              onClick: () => removeProject(project.id),
-            },
-          });
-        }
-      }
-    };
-
-    // Check immediately
-    checkDirectories();
-
-    // Check every 30 seconds
-    const interval = setInterval(checkDirectories, 30000);
-
-    return () => clearInterval(interval);
-  }, [projects, removeProject]);
 
   // Listen for authentication errors from Blink processes
   useEffect(() => {
@@ -118,6 +95,14 @@ export const ProjectSidebar: React.FC = () => {
   };
 
   const handleStartProject = async (projectId: string, projectPath: string, port: number) => {
+    // Check if directory exists first
+    const dirCheck = await window.electronAPI.checkDirectoryExists(projectPath);
+    if (!dirCheck.exists) {
+      setMissingDirProjectId(projectId);
+      setShowMissingDirDialog(true);
+      return;
+    }
+
     updateProject(projectId, { status: 'starting' });
     
     const result = await window.electronAPI.startBlinkProject(projectId, projectPath, port);
@@ -145,6 +130,30 @@ export const ProjectSidebar: React.FC = () => {
       removeProject(deleteProjectId);
       setDeleteProjectId('');
     }
+  };
+
+  const handleRelocateProject = async () => {
+    const newPath = await window.electronAPI.selectDirectory();
+    if (!newPath || !missingDirProjectId) return;
+
+    const project = projects.find(p => p.id === missingDirProjectId);
+    if (!project) return;
+
+    // Update project with new path and name
+    const newName = newPath.split('/').pop() || project.name;
+    updateProject(missingDirProjectId, { path: newPath, name: newName });
+    
+    setShowMissingDirDialog(false);
+    setMissingDirProjectId('');
+    toast.success(`Project relocated to: ${newPath}`);
+  };
+
+  const handleRemoveMissingProject = () => {
+    if (missingDirProjectId) {
+      removeProject(missingDirProjectId);
+      setMissingDirProjectId('');
+    }
+    setShowMissingDirDialog(false);
   };
 
   const handleAuthDialogClose = async (saved: boolean) => {
@@ -283,6 +292,15 @@ export const ProjectSidebar: React.FC = () => {
         onOpenChange={setShowDeleteDialog}
         projectName={projects.find(p => p.id === deleteProjectId)?.name || ''}
         onConfirm={handleConfirmDelete}
+      />
+
+      <MissingDirectoryDialog
+        open={showMissingDirDialog}
+        onOpenChange={setShowMissingDirDialog}
+        projectName={projects.find(p => p.id === missingDirProjectId)?.name || ''}
+        projectPath={projects.find(p => p.id === missingDirProjectId)?.path || ''}
+        onRelocate={handleRelocateProject}
+        onRemove={handleRemoveMissingProject}
       />
     </div>
   );
