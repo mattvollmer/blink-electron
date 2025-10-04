@@ -16,6 +16,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [collapsedTools, setCollapsedTools] = useState<Set<string>>(new Set());
   const [client, setClient] = useState<Client | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -61,13 +62,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setIsThinking(true);
     setShouldAutoScroll(true); // Always scroll when user sends a message
 
     try {
       // Convert messages to the format expected by Blink runtime
       const formattedMessages = [...messages, userMessage].map(msg => ({
         role: msg.role,
-        parts: [
+        parts: msg.parts || [
           {
             type: 'text',
             text: msg.content,
@@ -101,10 +103,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       let toolCalls: Array<{id: string, name: string, input: any}> = [];
       let toolOutputs: Map<string, any> = new Map();
       let hasTools = false;
+      let firstChunk = true;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
+        // Hide thinking indicator on first chunk
+        if (firstChunk) {
+          setIsThinking(false);
+          firstChunk = false;
+        }
 
         // Decode the chunk and extract text from SSE format
         const chunk = decoder.decode(value, { stream: true });
@@ -288,6 +297,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       // No need to show alert here
     } finally {
       setIsLoading(false);
+      setIsThinking(false);
     }
   };
 
@@ -406,6 +416,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               </div>
             );
           })
+        )}
+        {isThinking && (
+          <div className="flex justify-start">
+            <div className="max-w-[75%] rounded-lg p-3 bg-muted">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
