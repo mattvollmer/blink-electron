@@ -39,9 +39,12 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
     setIsLoading(true);
     try {
       const result = await window.electronAPI.updateAgentApiKey(projectPath, apiKey, 'blink');
+      console.log('[AuthRequiredDialog] API key update result:', result);
       if (result.success) {
+        console.log('[AuthRequiredDialog] About to call onClose(true)');
         toast.success('API key saved!');
         onClose(true); // Trigger rebuild first
+        console.log('[AuthRequiredDialog] Called onClose, now closing dialog...');
         setTimeout(() => onOpenChange(false), 100); // Close dialog after a small delay
       } else {
         toast.error(`Failed to save API key: ${result.error}`);
