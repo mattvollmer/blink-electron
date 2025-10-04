@@ -456,7 +456,14 @@ ipcMain.handle("rebuild-project", async (_event, projectId: string) => {
     );
     console.log("[rebuild-project] Project started successfully");
 
-    return { success: true };
+    // Wait a moment for edit agent to initialize
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Get the new project info (including new editPort)
+    const newProjectInfo = blinkProcessManager.getProjectInfo(projectId);
+    console.log("[rebuild-project] New project info:", newProjectInfo);
+
+    return { success: true, editPort: newProjectInfo?.editPort };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[rebuild-project] Error:", error);
