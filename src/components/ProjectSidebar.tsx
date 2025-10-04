@@ -7,7 +7,7 @@ import { AuthRequiredDialog } from './AuthRequiredDialog';
 import { toast } from 'sonner';
 
 export const ProjectSidebar: React.FC = () => {
-  const { projects, addProject, removeProject, updateProject, setCurrentProject } = useProjectStore();
+  const { projects, currentProjectId, addProject, removeProject, updateProject, setCurrentProject } = useProjectStore();
   const [showInitDialog, setShowInitDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
