@@ -341,7 +341,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                       </ReactMarkdown>
                     </div>
                   ) : (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className={`prose prose-sm max-w-none ${
+                      message.role === 'user' 
+                        ? 'prose-invert' 
+                        : 'dark:prose-invert'
+                    }`}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {message.content}
                       </ReactMarkdown>
