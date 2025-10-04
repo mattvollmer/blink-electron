@@ -224,13 +224,24 @@ class BlinkProcessManager {
           );
           const editAgent = blink.agent();
           editAgent.on("chat", async ({ messages }) => {
-            const converted = convertToModelMessages(messages, {
-              ignoreIncompleteToolCalls: true,
-            });
-            return streamText({
-              model: blink.model("anthropic/claude-sonnet-4.5"),
-              messages: converted,
-            });
+            console.log(
+              `[Edit Agent] Received chat request with ${messages.length} messages`,
+            );
+            try {
+              const converted = convertToModelMessages(messages, {
+                ignoreIncompleteToolCalls: true,
+              });
+              console.log(
+                `[Edit Agent] Converted ${converted.length} model messages`,
+              );
+              return streamText({
+                model: blink.model("anthropic/claude-sonnet-4.5"),
+                messages: converted,
+              });
+            } catch (error) {
+              console.error(`[Edit Agent] Error in chat handler:`, error);
+              throw error;
+            }
           });
           const server = editAgent.serve({
             port: editPort,
