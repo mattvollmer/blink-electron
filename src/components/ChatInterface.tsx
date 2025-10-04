@@ -156,7 +156,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             const output = toolOutputs.get(tool.id);
             return `🔧 **${tool.name}**\n\`\`\`json\nInput: ${JSON.stringify(tool.input, null, 2)}\n\nOutput: ${JSON.stringify(output, null, 2)}\n\`\`\``;
           }).join('\n\n'),
-          createdAt: new Date(),
+          createdAt: new Date(Date.now() + 1), // Ensure it comes after first message
         };
         
         setMessages((prev) => [
@@ -181,6 +181,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           });
         }
         
+        // Add assistant message to messages (for follow-up request context only, don't modify UI)
         const assistantMessageWithTools = {
           id: assistantId,
           role: 'assistant' as const,
@@ -188,12 +189,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           content: assistantMessage,
           createdAt: new Date(),
         };
-        
-        // Add assistant message to messages
-        setMessages((prev) => [
-          ...prev.filter(m => m.id !== assistantId),
-          assistantMessageWithTools
-        ]);
         
         // Make follow-up request with tool results
         const followUpMessages = [...messages, userMessage, assistantMessageWithTools].map(msg => ({
