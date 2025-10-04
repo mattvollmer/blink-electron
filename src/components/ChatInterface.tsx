@@ -10,6 +10,7 @@ import {
   Copy,
   Square,
   Play,
+  Info,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -621,11 +622,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                     <div
                       className={
                         mode === "edit"
-                          ? "text-yellow-500 cursor-help"
-                          : "text-muted-foreground cursor-help"
+                          ? "text-yellow-500 flex items-center gap-1"
+                          : "text-muted-foreground flex items-center gap-1"
                       }
                     >
                       mode: {mode}
+                      <Info className="w-3 h-3" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" align="start">
