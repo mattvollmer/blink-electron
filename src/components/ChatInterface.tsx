@@ -74,6 +74,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       `[Mode Toggle] Switching from ${mode} to ${mode === "run" ? "edit" : "run"}`,
     );
     const newMode = mode === "run" ? "edit" : "run";
+    // Add a system message to indicate mode change
+    const modeChangeMessage = {
+      id: `${Date.now()}-mode-change`,
+      role: "assistant",
+      content: `*Switched to ${newMode === "edit" ? "Edit" : "Run"} mode*${newMode === "edit" ? " - I'm now a development assistant helping you build and modify your agent." : " - I'm now your agent responding to requests."}`,
+      createdAt: new Date(),
+      metadata: { mode: newMode, isSystemMessage: true },
+    };
+    addProjectMessage(project.id, modeChangeMessage);
     updateProject(project.id, { mode: mode === "run" ? "edit" : "run" });
     toast.info(`Switched to ${newMode === "edit" ? "Edit" : "Run"} mode`, {
       description:
