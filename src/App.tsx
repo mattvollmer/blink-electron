@@ -41,7 +41,15 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      <Toaster position="top-right" closeButton />
+      <Toaster
+        position="top-right"
+        closeButton
+        toastOptions={{
+          classNames: {
+            closeButton: "left-auto right-2",
+          },
+        }}
+      />
       <ProjectSidebar />
 
       <div className="flex-1 flex flex-col">
