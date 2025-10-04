@@ -617,7 +617,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             />
             <div className="mt-2 flex items-center justify-between text-xs">
               <TooltipProvider>
-                <Tooltip>
+                <Tooltip delayDuration={200}>
                   <TooltipTrigger asChild>
                     <div
                       className={
