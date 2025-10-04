@@ -420,18 +420,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 {message.role === 'user' ? (
                   <button
                     onClick={() => handleCopy(message.content)}
-                    className="mt-2 p-1 text-muted-foreground hover:text-foreground rounded"
+                    className="mt-1 p-1 text-muted-foreground hover:text-foreground rounded"
                     title="Copy message"
                   >
-                    <Copy className="w-3 h-3" />
+                    <Copy className="w-4 h-4" />
                   </button>
                 ) : (
                   <button
                     onClick={() => handleCopy(message.content)}
-                    className="mt-2 p-1 text-muted-foreground hover:text-foreground rounded"
+                    className="mt-1 p-1 text-muted-foreground hover:text-foreground rounded"
                     title="Copy message"
                   >
-                    <Copy className="w-3 h-3" />
+                    <Copy className="w-4 h-4" />
                   </button>
                 )}
               </div>
