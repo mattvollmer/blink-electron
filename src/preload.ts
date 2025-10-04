@@ -60,6 +60,13 @@ const api = {
     ipcRenderer.on("app:refresh-chat", subscription);
     return () => ipcRenderer.removeListener("app:refresh-chat", subscription);
   },
+
+  // Signal to stop any active streams (fired before chat clear)
+  onStopStreams: (callback: () => void) => {
+    const subscription = () => callback();
+    ipcRenderer.on("app:stop-streams", subscription);
+    return () => ipcRenderer.removeListener("app:stop-streams", subscription);
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", api);

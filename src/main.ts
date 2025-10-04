@@ -45,6 +45,7 @@ const createWindow = () => {
           accelerator: "CmdOrCtrl+R",
           click: () => {
             if (!mainWindow.isDestroyed()) {
+              mainWindow.webContents.send("app:stop-streams");
               mainWindow.webContents.send("app:refresh-chat");
             }
           },

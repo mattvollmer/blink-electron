@@ -43,6 +43,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     }
   }, [project.status, project.port]);
 
+  // Handle app-level stop-streams (fired before Cmd/Ctrl+R clears chat)
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onStopStreams(() => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      setIsLoading(false);
+      setIsThinking(false);
+    });
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     if (shouldAutoScroll) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
