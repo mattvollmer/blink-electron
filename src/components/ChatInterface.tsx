@@ -53,41 +53,68 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         content: msg.content,
       }));
       
-      const chatPayload = {
-        messages: formattedMessages,
-      };
-      console.log('Sending chat payload:', JSON.stringify(chatPayload, null, 2));
+      console.log('Sending messages:', JSON.stringify(formattedMessages, null, 2));
       
-      const stream = await client.chat(chatPayload);
+      // Use fetch directly to the agent endpoint
+      const response = await fetch(`http://localhost:${project.port}/_agent/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: formattedMessages }),
+      });
 
-      const reader = stream.getReader();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
       let assistantMessage = '';
       const assistantId = Date.now().toString();
+      const decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        if (value.type === 'text-delta') {
-          assistantMessage += value.textDelta;
-          
-          setMessages((prev) => {
-            const existing = prev.find(m => m.id === assistantId);
-            if (existing) {
-              return prev.map(m => 
-                m.id === assistantId 
-                  ? { ...m, content: assistantMessage }
-                  : m
-              );
-            } else {
-              return [...prev, {
-                id: assistantId,
-                role: 'assistant' as const,
-                content: assistantMessage,
-                createdAt: new Date(),
-              }];
+        // Decode the chunk and extract text from SSE format
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('0:')) {
+            // Text delta from AI SDK stream
+            try {
+              const data = JSON.parse(line.substring(2));
+              if (data) {
+                assistantMessage += data;
+                setMessages((prev) => {
+                  const existing = prev.find((m) => m.id === assistantId);
+                  if (existing) {
+                    return prev.map((m) =>
+                      m.id === assistantId ? { ...m, content: assistantMessage } : m
+                    );
+                  } else {
+                    return [
+                      ...prev,
+                      {
+                        id: assistantId,
+                        role: 'assistant' as const,
+                        content: assistantMessage,
+                        createdAt: new Date(),
+                      },
+                    ];
+                  }
+                });
+              }
+            } catch (e) {
+              // Skip invalid JSON
             }
-          });
+          }
         }
       }
     } catch (error) {
