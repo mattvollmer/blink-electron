@@ -123,7 +123,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
     try {
       // Convert messages to the format expected by Blink runtime
-      const formattedMessages = [...project.messages, userMessage].map(
+      const formattedMessages = [...(project.messages || []), userMessage].map(
         (msg) => ({
           role: msg.role,
           parts: msg.parts || [
