@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
 import { InitProjectDialog } from './InitProjectDialog';
 import { AuthRequiredDialog } from './AuthRequiredDialog';
+import { ThemeToggle } from './ThemeToggle';
 import { toast } from 'sonner';
 
 export const ProjectSidebar: React.FC = () => {
@@ -146,8 +147,9 @@ export const ProjectSidebar: React.FC = () => {
 
   return (
     <div className="w-64 border-r border-border bg-card flex flex-col">
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-border flex items-center justify-between">
         <h1 className="text-xl font-bold">Blink Desktop</h1>
+        <ThemeToggle />
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
