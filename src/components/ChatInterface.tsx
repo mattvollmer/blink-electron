@@ -14,7 +14,9 @@ interface ChatInterfaceProps {
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const { setProjectMessages, addProjectMessage, projects } = useProjectStore();
-  const messages = project.messages || [];
+  // Deduplicate messages in case of any duplicates from localStorage
+  const rawMessages = project.messages || [];
+  const messages = Array.from(new Map(rawMessages.map(m => [m.id, m])).values());
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -62,7 +64,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     if (!input.trim() || !client || project.status !== 'running') return;
 
     const userMessage: UIMessage = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       role: 'user',
       content: input,
       createdAt: new Date(),
@@ -108,7 +110,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       }
 
       let assistantMessage = '';
-      const assistantId = Date.now().toString();
+      const assistantId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const decoder = new TextDecoder();
       let toolCalls: Array<{id: string, name: string, input: any}> = [];
       let toolOutputs: Map<string, any> = new Map();
@@ -246,7 +248,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         
         // Read the follow-up response
         let followUpMessage = '';
-        const followUpId = Date.now().toString() + '-followup';
+        const followUpId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
         while (true) {
           const { done, value } = await followUpReader.read();
