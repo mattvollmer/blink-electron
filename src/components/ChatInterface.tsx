@@ -4,7 +4,7 @@ import { UIMessage } from "ai";
 import { BlinkProject, useProjectStore } from "../store/projectStore";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Send, ChevronRight, ChevronDown, Copy } from "lucide-react";
+import { Send, ChevronRight, ChevronDown, Copy, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -27,6 +27,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const isMac =
     typeof navigator !== "undefined" &&
     navigator.platform.toLowerCase().includes("mac");
@@ -66,6 +67,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     }
   };
 
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    setIsThinking(false);
+  };
+
   const handleSend = async () => {
     if (!input.trim() || !client || project.status !== "running") return;
 
@@ -82,6 +92,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setIsThinking(true);
     console.log("Setting isThinking to true");
     setShouldAutoScroll(true); // Always scroll when user sends a message
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       // Convert messages to the format expected by Blink runtime
@@ -111,6 +124,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ messages: formattedMessages }),
+          signal: abortControllerRef.current.signal,
         },
       );
 
@@ -328,13 +342,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
-      // Auth dialog will handle authentication errors automatically
-      // No need to show alert here
+      // Don't show error if it was an intentional abort
+      if (error.name !== "AbortError") {
+        // Auth dialog will handle authentication errors automatically
+      }
     } finally {
       setIsLoading(false);
       setIsThinking(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -526,8 +543,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               </div>
             </div>
           </div>
-          <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
-            <Send className="w-4 h-4" />
+          <Button
+            onClick={isLoading ? handleStop : handleSend}
+            disabled={!isLoading && !input.trim()}
+          >
+            {isLoading ? (
+              <Square className="w-4 h-4" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         </div>
       </div>
