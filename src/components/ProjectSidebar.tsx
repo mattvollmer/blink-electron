@@ -147,7 +147,7 @@ export const ProjectSidebar: React.FC = () => {
 
   return (
     <div className="w-64 border-r border-border bg-card flex flex-col">
-      <div className="p-4 border-b border-border flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Blink Desktop</h1>
         <ThemeToggle />
       </div>
@@ -221,7 +221,7 @@ export const ProjectSidebar: React.FC = () => {
         ))}
       </div>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-4">
         <Button onClick={handleAddProject} className="w-full">
           <FolderPlus className="w-4 h-4 mr-2" />
           Add Project
