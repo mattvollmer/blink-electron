@@ -5,6 +5,8 @@ import { BlinkProject } from '../store/projectStore';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Send } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatInterfaceProps {
   project: BlinkProject;
@@ -302,24 +304,53 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             <p className="text-muted-foreground">Start a conversation with your agent</p>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
+          messages.map((message) => {
+            // Check if this is a tool call message
+            const isToolCall = message.content.includes('🔧 **');
+            
+            return (
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                key={message.id}
+                className={`flex ${
+                  message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
-                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : isToolCall
+                      ? 'bg-muted/50 border border-border'
+                      : 'bg-muted'
+                  }`}
+                >
+                  {isToolCall ? (
+                    <div className="text-xs font-mono space-y-2">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          pre: ({ node, ...props }) => (
+                            <pre className="text-[10px] overflow-x-auto" {...props} />
+                          ),
+                          code: ({ node, ...props }) => (
+                            <code className="text-[10px]" {...props} />
+                          ),
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
