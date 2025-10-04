@@ -21,6 +21,22 @@ export const App: React.FC = () => {
     return unsubscribe;
   }, []);
 
+  // Add useEffect to handle 'app:stop-streams'
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onStopStreams(async () => {
+      const state = useProjectStore.getState();
+      const id = state.currentProjectId;
+      if (id) {
+        try {
+          await window.electronAPI.rebuildProject(id);
+        } catch (e) {
+          // ignore
+        }
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   return (
     <div className="flex h-screen bg-background">
       <Toaster position="top-right" />
