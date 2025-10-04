@@ -63,6 +63,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setInput('');
     setIsLoading(true);
     setIsThinking(true);
+    console.log('Setting isThinking to true');
     setShouldAutoScroll(true); // Always scroll when user sends a message
 
     try {
@@ -112,6 +113,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         // Hide thinking indicator on first chunk
         if (firstChunk) {
           setIsThinking(false);
+          console.log('Setting isThinking to false - first chunk received');
           firstChunk = false;
         }
 
@@ -422,9 +424,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             <div className="max-w-[75%] rounded-lg p-3 bg-muted">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                  <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                  <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  <span className="w-3 h-3 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-3 h-3 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-3 h-3 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                 </div>
               </div>
             </div>
