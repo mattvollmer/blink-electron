@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,11 +6,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from './ui/dialog';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { AlertCircle, Key, ExternalLink } from 'lucide-react';
-import { toast } from 'sonner';
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { AlertCircle, Key, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 interface AuthRequiredDialogProps {
   open: boolean;
@@ -27,24 +27,30 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
   projectId,
   onClose,
 }) => {
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) {
-      toast.error('Please enter your Blink API key');
+      toast.error("Please enter your Blink API key");
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      const result = await window.electronAPI.updateAgentApiKey(projectPath, apiKey, 'blink');
-      console.log('[AuthRequiredDialog] API key update result:', result);
+      const result = await window.electronAPI.updateAgentApiKey(
+        projectPath,
+        apiKey,
+        "blink",
+      );
+      console.log("[AuthRequiredDialog] API key update result:", result);
       if (result.success) {
-        console.log('[AuthRequiredDialog] About to call onClose(true)');
-        toast.success('API key saved!');
+        console.log("[AuthRequiredDialog] About to call onClose(true)");
+        toast.success("API key saved!");
         onClose(true); // Trigger rebuild first
-        console.log('[AuthRequiredDialog] Called onClose, now closing dialog...');
+        console.log(
+          "[AuthRequiredDialog] Called onClose, now closing dialog...",
+        );
         setTimeout(() => onOpenChange(false), 100); // Close dialog after a small delay
       } else {
         toast.error(`Failed to save API key: ${result.error}`);
@@ -82,13 +88,13 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   handleSaveApiKey();
                 }
               }}
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Get your API key from{' '}
+              Get your API key from{" "}
               <a
                 href="https://blink.so/settings/keys"
                 target="_blank"
@@ -102,12 +108,12 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button 
-            onClick={handleSaveApiKey} 
+          <Button
+            onClick={handleSaveApiKey}
             disabled={isLoading || !apiKey.trim()}
             className="w-full"
           >
-            {isLoading ? 'Saving...' : 'Save API Key'}
+            {isLoading ? "Saving..." : "Save API Key"}
           </Button>
         </DialogFooter>
       </DialogContent>

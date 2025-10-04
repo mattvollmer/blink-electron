@@ -1,9 +1,9 @@
-import { spawn, ChildProcess } from 'child_process';
-import { BrowserWindow } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
-import { promisify } from 'util';
-import { exec } from 'child_process';
+import { spawn, ChildProcess } from "child_process";
+import { BrowserWindow } from "electron";
+import * as fs from "fs";
+import * as path from "path";
+import { promisify } from "util";
+import { exec } from "child_process";
 
 const execPromise = promisify(exec);
 
@@ -23,19 +23,21 @@ class BlinkProcessManager {
 
   private async killProcessOnPort(port: number): Promise<void> {
     try {
-      const { exec } = require('child_process');
-      const util = require('util');
+      const { exec } = require("child_process");
+      const util = require("util");
       const execPromise = util.promisify(exec);
 
-      if (process.platform === 'win32') {
+      if (process.platform === "win32") {
         // Windows
         const { stdout } = await execPromise(`netstat -ano | findstr :${port}`);
-        const lines = stdout.split('\n').filter((line: string) => line.includes('LISTENING'));
-        
+        const lines = stdout
+          .split("\n")
+          .filter((line: string) => line.includes("LISTENING"));
+
         for (const line of lines) {
           const parts = line.trim().split(/\s+/);
           const pid = parts[parts.length - 1];
-          if (pid && pid !== '0') {
+          if (pid && pid !== "0") {
             await execPromise(`taskkill /F /PID ${pid}`);
             console.log(`Killed process ${pid} on port ${port}`);
           }
@@ -44,8 +46,11 @@ class BlinkProcessManager {
         // macOS/Linux
         try {
           const { stdout } = await execPromise(`lsof -ti:${port}`);
-          const pids = stdout.trim().split('\n').filter((pid: string) => pid);
-          
+          const pids = stdout
+            .trim()
+            .split("\n")
+            .filter((pid: string) => pid);
+
           for (const pid of pids) {
             await execPromise(`kill -9 ${pid}`);
             console.log(`Killed process ${pid} on port ${port}`);
@@ -59,7 +64,11 @@ class BlinkProcessManager {
     }
   }
 
-  async startProject(projectId: string, projectPath: string, port: number): Promise<void> {
+  async startProject(
+    projectId: string,
+    projectPath: string,
+    port: number,
+  ): Promise<void> {
     if (this.processes.has(projectId)) {
       throw new Error(`Project ${projectId} is already running`);
     }
@@ -69,31 +78,31 @@ class BlinkProcessManager {
 
     return new Promise((resolve, reject) => {
       // First, build the project
-      const buildProcess = spawn('blink', ['build'], {
+      const buildProcess = spawn("blink", ["build"], {
         cwd: projectPath,
         shell: true,
       });
 
-      buildProcess.on('close', (code) => {
+      buildProcess.on("close", (code) => {
         if (code !== 0) {
-          reject(new Error('Failed to build project'));
+          reject(new Error("Failed to build project"));
           return;
         }
 
         // Run the built agent with custom port via environment variable
         // Read .env.production to get API keys
-        const envProdPath = path.join(projectPath, '.env.production');
+        const envProdPath = path.join(projectPath, ".env.production");
         let envVars: Record<string, string> = {};
-        
+
         try {
-          const envContent = fs.readFileSync(envProdPath, 'utf-8');
+          const envContent = fs.readFileSync(envProdPath, "utf-8");
           // Simple .env parser
-          envContent.split('\n').forEach(line => {
+          envContent.split("\n").forEach((line) => {
             line = line.trim();
-            if (line && !line.startsWith('#')) {
-              const [key, ...valueParts] = line.split('=');
+            if (line && !line.startsWith("#")) {
+              const [key, ...valueParts] = line.split("=");
               if (key) {
-                envVars[key.trim()] = valueParts.join('=').trim();
+                envVars[key.trim()] = valueParts.join("=").trim();
               }
             }
           });
@@ -101,53 +110,53 @@ class BlinkProcessManager {
         } catch (error) {
           console.log(`[${projectId}] No .env.production file found`);
         }
-        
-        const blinkProcess = spawn('node', ['.blink/build/agent.js'], {
+
+        const blinkProcess = spawn("node", [".blink/build/agent.js"], {
           cwd: projectPath,
           env: { ...process.env, ...envVars, PORT: port.toString() },
           shell: true,
         });
 
-        let startupError = '';
+        let startupError = "";
 
-        blinkProcess.stdout?.on('data', (data) => {
+        blinkProcess.stdout?.on("data", (data) => {
           console.log(`[${projectId}] stdout:`, data.toString());
           // Send logs to renderer
           if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            this.mainWindow.webContents.send('blink:log', {
+            this.mainWindow.webContents.send("blink:log", {
               projectId,
-              level: 'info',
+              level: "info",
               message: data.toString(),
             });
           }
         });
 
-        blinkProcess.stderr?.on('data', (data) => {
+        blinkProcess.stderr?.on("data", (data) => {
           const message = data.toString();
           console.error(`[${projectId}] stderr:`, message);
           startupError += message;
-          
+
           if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            this.mainWindow.webContents.send('blink:log', {
+            this.mainWindow.webContents.send("blink:log", {
               projectId,
-              level: 'error',
+              level: "error",
               message,
             });
           }
         });
 
-        blinkProcess.on('error', (error) => {
+        blinkProcess.on("error", (error) => {
           console.error(`[${projectId}] Failed to start:`, error);
           this.processes.delete(projectId);
           reject(error);
         });
 
-        blinkProcess.on('exit', (code) => {
+        blinkProcess.on("exit", (code) => {
           console.log(`[${projectId}] Process exited with code ${code}`);
           this.processes.delete(projectId);
-          
+
           if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            this.mainWindow.webContents.send('blink:process-exit', {
+            this.mainWindow.webContents.send("blink:process-exit", {
               projectId,
               code,
             });
@@ -161,14 +170,48 @@ class BlinkProcessManager {
           projectPath,
         });
 
-        // Give it a moment to start up
-        setTimeout(() => {
-          if (this.processes.has(projectId)) {
-            resolve();
-          } else {
-            reject(new Error(`Failed to start project: ${startupError}`));
+        // Wait for the agent to actually be listening on the port
+        const checkPort = async (retries = 30): Promise<void> => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const http = require("http");
+              await new Promise<void>((resolveCheck, rejectCheck) => {
+                const req = http.get(
+                  `http://127.0.0.1:${port}/`,
+                  (res: any) => {
+                    resolveCheck();
+                  },
+                );
+                req.on("error", () => {
+                  rejectCheck();
+                });
+                req.setTimeout(500);
+              });
+              // Port is responding
+              console.log(`[${projectId}] Agent is ready on port ${port}`);
+              return;
+            } catch {
+              // Port not ready yet, wait and retry
+              await new Promise((r) => setTimeout(r, 200));
+            }
           }
-        }, 2000);
+          throw new Error(
+            `Agent failed to start on port ${port} after ${retries} retries`,
+          );
+        };
+
+        checkPort()
+          .then(() => {
+            if (this.processes.has(projectId)) {
+              resolve();
+            } else {
+              reject(new Error(`Failed to start project: ${startupError}`));
+            }
+          })
+          .catch((err) => {
+            this.processes.delete(projectId);
+            reject(err);
+          });
       });
     });
   }
@@ -195,7 +238,9 @@ class BlinkProcessManager {
     return this.processes.get(projectId)?.port;
   }
 
-  getProjectInfo(projectId: string): { projectPath: string; port: number } | null {
+  getProjectInfo(
+    projectId: string,
+  ): { projectPath: string; port: number } | null {
     const process = this.processes.get(projectId);
     if (!process) {
       return null;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,8 +6,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from './ui/dialog';
-import { Button } from './ui/button';
+} from "./ui/dialog";
+import { Button } from "./ui/button";
 
 interface MissingDirectoryDialogProps {
   open: boolean;
@@ -34,7 +34,9 @@ export const MissingDirectoryDialog: React.FC<MissingDirectoryDialogProps> = ({
           <DialogDescription>
             The directory for <strong>{projectName}</strong> could not be found:
             <br />
-            <code className="text-xs bg-muted px-2 py-1 rounded mt-2 block">{projectPath}</code>
+            <code className="text-xs bg-muted px-2 py-1 rounded mt-2 block">
+              {projectPath}
+            </code>
             <br />
             The directory may have been moved, renamed, or deleted.
           </DialogDescription>
@@ -43,9 +45,7 @@ export const MissingDirectoryDialog: React.FC<MissingDirectoryDialogProps> = ({
           <Button variant="outline" onClick={onRemove}>
             Remove Project
           </Button>
-          <Button onClick={onRelocate}>
-            Choose New Location
-          </Button>
+          <Button onClick={onRelocate}>Choose New Location</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

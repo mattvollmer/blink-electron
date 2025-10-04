@@ -1,48 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { useProjectStore } from '../store/projectStore';
-import { Button } from './ui/button';
-import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
-import { InitProjectDialog } from './InitProjectDialog';
-import { AuthRequiredDialog } from './AuthRequiredDialog';
-import { DeleteProjectDialog } from './DeleteProjectDialog';
-import { MissingDirectoryDialog } from './MissingDirectoryDialog';
-import { ThemeToggle } from './ThemeToggle';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useRef } from "react";
+import { useProjectStore } from "../store/projectStore";
+import { Button } from "./ui/button";
+import { FolderPlus, Play, Square, Trash2 } from "lucide-react";
+import { InitProjectDialog } from "./InitProjectDialog";
+import { AuthRequiredDialog } from "./AuthRequiredDialog";
+import { DeleteProjectDialog } from "./DeleteProjectDialog";
+import { MissingDirectoryDialog } from "./MissingDirectoryDialog";
+import { ThemeToggle } from "./ThemeToggle";
+import { toast } from "sonner";
 
 export const ProjectSidebar: React.FC = () => {
-  const { projects, currentProjectId, addProject, removeProject, updateProject, setCurrentProject } = useProjectStore();
+  const {
+    projects,
+    currentProjectId,
+    addProject,
+    removeProject,
+    updateProject,
+    setCurrentProject,
+  } = useProjectStore();
   const [showInitDialog, setShowInitDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showMissingDirDialog, setShowMissingDirDialog] = useState(false);
-  const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
-  const [authProjectPath, setAuthProjectPath] = useState<string>('');
-  const [authProjectId, setAuthProjectId] = useState<string>('');
-  const [deleteProjectId, setDeleteProjectId] = useState<string>('');
-  const [missingDirProjectId, setMissingDirProjectId] = useState<string>('');
+  const [pendingProjectPath, setPendingProjectPath] = useState<string>("");
+  const [authProjectPath, setAuthProjectPath] = useState<string>("");
+  const [authProjectId, setAuthProjectId] = useState<string>("");
+  const [deleteProjectId, setDeleteProjectId] = useState<string>("");
+  const [missingDirProjectId, setMissingDirProjectId] = useState<string>("");
   const [sidebarWidth, setSidebarWidth] = useState(256); // 16rem = 256px
   const [isResizing, setIsResizing] = useState(false);
+  const startupTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Sync project status on mount - check which projects are actually running
   useEffect(() => {
     const syncProjectStatuses = async () => {
       for (const project of projects) {
         const isRunning = await window.electronAPI.isProjectRunning(project.id);
-        if (isRunning && project.status !== 'running') {
-          updateProject(project.id, { status: 'running' });
-        } else if (!isRunning && project.status === 'running') {
-          updateProject(project.id, { status: 'stopped' });
+        if (isRunning && project.status !== "running") {
+          updateProject(project.id, { status: "running" });
+        } else if (!isRunning && project.status === "running") {
+          updateProject(project.id, { status: "stopped" });
         }
       }
     };
     syncProjectStatuses();
   }, []); // Only run once on mount
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      for (const timeout of startupTimeoutsRef.current.values()) {
+        clearTimeout(timeout);
+      }
+    };
+  }, []);
+
   // Handle sidebar resizing
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
-      
+
       const newWidth = e.clientX;
       // Constrain between 200px and 500px
       if (newWidth >= 200 && newWidth <= 500) {
@@ -55,13 +72,13 @@ export const ProjectSidebar: React.FC = () => {
     };
 
     if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isResizing]);
 
@@ -72,13 +89,16 @@ export const ProjectSidebar: React.FC = () => {
   // Listen for authentication errors from Blink processes
   useEffect(() => {
     const unsubscribe = window.electronAPI.onBlinkLog((data) => {
-      if (data.message.includes('You must be authenticated') || data.message.includes('blink login')) {
-        const project = projects.find(p => p.id === data.projectId);
+      if (
+        data.message.includes("You must be authenticated") ||
+        data.message.includes("blink login")
+      ) {
+        const project = projects.find((p) => p.id === data.projectId);
         if (project) {
           setAuthProjectPath(project.path);
           setAuthProjectId(project.id);
           setShowAuthDialog(true);
-          updateProject(data.projectId, { status: 'error' });
+          updateProject(data.projectId, { status: "error" });
         }
       }
     });
@@ -91,7 +111,7 @@ export const ProjectSidebar: React.FC = () => {
 
     const check = await window.electronAPI.checkBlinkProject(projectPath);
     if (!check.success) {
-      toast.error('Failed to check project');
+      toast.error("Failed to check project");
       return;
     }
 
@@ -109,8 +129,9 @@ export const ProjectSidebar: React.FC = () => {
     if (!pendingProjectPath) return;
 
     // Run blink init
-    const initResult = await window.electronAPI.initBlinkProject(pendingProjectPath);
-    
+    const initResult =
+      await window.electronAPI.initBlinkProject(pendingProjectPath);
+
     if (!initResult.success) {
       toast.error(`Failed to initialize Blink project:\n${initResult.error}`);
       return;
@@ -118,16 +139,20 @@ export const ProjectSidebar: React.FC = () => {
 
     // Add to project list
     addProjectToList(pendingProjectPath);
-    setPendingProjectPath('');
+    setPendingProjectPath("");
   };
 
   const addProjectToList = (projectPath: string) => {
     const port = 3000 + projects.length;
-    const name = projectPath.split('/').pop() || 'Unnamed Project';
+    const name = projectPath.split("/").pop() || "Unnamed Project";
     addProject({ name, path: projectPath, port });
   };
 
-  const handleStartProject = async (projectId: string, projectPath: string, port: number) => {
+  const handleStartProject = async (
+    projectId: string,
+    projectPath: string,
+    port: number,
+  ) => {
     // Check if directory exists first
     const dirCheck = await window.electronAPI.checkDirectoryExists(projectPath);
     if (!dirCheck.exists) {
@@ -136,21 +161,50 @@ export const ProjectSidebar: React.FC = () => {
       return;
     }
 
-    updateProject(projectId, { status: 'starting' });
-    
-    const result = await window.electronAPI.startBlinkProject(projectId, projectPath, port);
-    
+    updateProject(projectId, { status: "starting" });
+
+    // Set timeout to mark as error if startup takes too long
+    const timeoutId = setTimeout(() => {
+      const project = projects.find((p) => p.id === projectId);
+      if (project?.status === "starting") {
+        updateProject(projectId, { status: "error" });
+        toast.error(`Project startup timed out after 15 seconds`);
+      }
+      startupTimeoutsRef.current.delete(projectId);
+    }, 15000);
+    startupTimeoutsRef.current.set(projectId, timeoutId);
+
+    const result = await window.electronAPI.startBlinkProject(
+      projectId,
+      projectPath,
+      port,
+    );
+
+    // Clear timeout if we got a result
+    const existingTimeout = startupTimeoutsRef.current.get(projectId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      startupTimeoutsRef.current.delete(projectId);
+    }
+
     if (result.success) {
-      updateProject(projectId, { status: 'running' });
+      updateProject(projectId, { status: "running" });
     } else {
-      updateProject(projectId, { status: 'error' });
+      updateProject(projectId, { status: "error" });
       toast.error(`Failed to start project: ${result.error}`);
     }
   };
 
   const handleStopProject = async (projectId: string) => {
+    // Clear any pending timeout
+    const existingTimeout = startupTimeoutsRef.current.get(projectId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      startupTimeoutsRef.current.delete(projectId);
+    }
+
     await window.electronAPI.stopBlinkProject(projectId);
-    updateProject(projectId, { status: 'stopped' });
+    updateProject(projectId, { status: "stopped" });
   };
 
   const handleDeleteProject = (projectId: string) => {
@@ -161,7 +215,7 @@ export const ProjectSidebar: React.FC = () => {
   const handleConfirmDelete = () => {
     if (deleteProjectId) {
       removeProject(deleteProjectId);
-      setDeleteProjectId('');
+      setDeleteProjectId("");
     }
   };
 
@@ -169,61 +223,74 @@ export const ProjectSidebar: React.FC = () => {
     const newPath = await window.electronAPI.selectDirectory();
     if (!newPath || !missingDirProjectId) return;
 
-    const project = projects.find(p => p.id === missingDirProjectId);
+    const project = projects.find((p) => p.id === missingDirProjectId);
     if (!project) return;
 
     // Update project with new path and name
-    const newName = newPath.split('/').pop() || project.name;
+    const newName = newPath.split("/").pop() || project.name;
     updateProject(missingDirProjectId, { path: newPath, name: newName });
-    
+
     setShowMissingDirDialog(false);
-    setMissingDirProjectId('');
+    setMissingDirProjectId("");
     toast.success(`Project relocated to: ${newPath}`);
   };
 
   const handleRemoveMissingProject = () => {
     if (missingDirProjectId) {
       removeProject(missingDirProjectId);
-      setMissingDirProjectId('');
+      setMissingDirProjectId("");
     }
     setShowMissingDirDialog(false);
   };
 
   const handleAuthDialogClose = async (saved: boolean) => {
-    console.log('[handleAuthDialogClose] Called with saved:', saved, 'projectId:', authProjectId);
+    console.log(
+      "[handleAuthDialogClose] Called with saved:",
+      saved,
+      "projectId:",
+      authProjectId,
+    );
     setShowAuthDialog(false);
-    
+
     if (saved && authProjectId) {
       // Rebuild and restart the project
-      const toastId = toast.loading('Rebuilding project...');
-      console.log('[handleAuthDialogClose] Starting rebuild...');
-      
+      const toastId = toast.loading("Rebuilding project...");
+      console.log("[handleAuthDialogClose] Starting rebuild...");
+
       try {
         const result = await window.electronAPI.rebuildProject(authProjectId);
-        console.log('[handleAuthDialogClose] Rebuild result:', result);
+        console.log("[handleAuthDialogClose] Rebuild result:", result);
         toast.dismiss(toastId);
-        
+
         if (result.success) {
-          console.log('[handleAuthDialogClose] Rebuild successful, updating project status');
-          toast.success('Project rebuilt and restarted!');
+          console.log(
+            "[handleAuthDialogClose] Rebuild successful, updating project status",
+          );
+          toast.success("Project rebuilt and restarted!");
           // Update project status to running
-          updateProject(authProjectId, { status: 'running' });
+          updateProject(authProjectId, { status: "running" });
         } else {
-          console.error('[handleAuthDialogClose] Rebuild failed:', result.error);
+          console.error(
+            "[handleAuthDialogClose] Rebuild failed:",
+            result.error,
+          );
           toast.error(`Failed to rebuild: ${result.error}`);
-          updateProject(authProjectId, { status: 'error' });
+          updateProject(authProjectId, { status: "error" });
         }
       } catch (error) {
-        console.error('[handleAuthDialogClose] Exception during rebuild:', error);
+        console.error(
+          "[handleAuthDialogClose] Exception during rebuild:",
+          error,
+        );
         toast.dismiss(toastId);
         toast.error(`Error: ${error}`);
-        updateProject(authProjectId, { status: 'error' });
+        updateProject(authProjectId, { status: "error" });
       }
     }
   };
 
   return (
-    <div 
+    <div
       className="border-r border-border bg-card flex flex-col relative"
       style={{ width: `${sidebarWidth}px` }}
     >
@@ -238,15 +305,20 @@ export const ProjectSidebar: React.FC = () => {
             key={project.id}
             className={`p-3 rounded-lg cursor-pointer transition-colors ${
               currentProjectId === project.id
-                ? 'bg-accent'
-                : 'hover:bg-accent/50'
+                ? "bg-accent"
+                : "hover:bg-accent/50"
             }`}
             onClick={() => setCurrentProject(project.id)}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium truncate">{project.name}</h3>
-                <p className="text-xs text-muted-foreground truncate" style={{ direction: 'rtl', textAlign: 'left' }}>{project.path}</p>
+                <p
+                  className="text-xs text-muted-foreground truncate"
+                  style={{ direction: "rtl", textAlign: "left" }}
+                >
+                  {project.path}
+                </p>
               </div>
               <button
                 onClick={(e) => {
@@ -258,24 +330,28 @@ export const ProjectSidebar: React.FC = () => {
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-xs">
-                {project.status === 'running' && (
-                  <span className="text-green-600 dark:text-green-400">● Running</span>
+                {project.status === "running" && (
+                  <span className="text-green-600 dark:text-green-400">
+                    ● Running
+                  </span>
                 )}
-                {project.status === 'stopped' && (
+                {project.status === "stopped" && (
                   <span className="text-muted-foreground">○ Stopped</span>
                 )}
-                {project.status === 'starting' && (
-                  <span className="text-yellow-600 dark:text-yellow-400">● Starting...</span>
+                {project.status === "starting" && (
+                  <span className="text-yellow-600 dark:text-yellow-400">
+                    ● Starting...
+                  </span>
                 )}
-                {project.status === 'error' && (
+                {project.status === "error" && (
                   <span className="text-destructive">● Error</span>
                 )}
               </span>
-              
-              {project.status === 'stopped' || project.status === 'error' ? (
+
+              {project.status === "stopped" || project.status === "error" ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -285,7 +361,8 @@ export const ProjectSidebar: React.FC = () => {
                 >
                   <Play className="w-4 h-4" />
                 </button>
-              ) : project.status === 'running' ? (
+              ) : project.status === "running" ||
+                project.status === "starting" ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -326,15 +403,19 @@ export const ProjectSidebar: React.FC = () => {
       <DeleteProjectDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        projectName={projects.find(p => p.id === deleteProjectId)?.name || ''}
+        projectName={projects.find((p) => p.id === deleteProjectId)?.name || ""}
         onConfirm={handleConfirmDelete}
       />
 
       <MissingDirectoryDialog
         open={showMissingDirDialog}
         onOpenChange={setShowMissingDirDialog}
-        projectName={projects.find(p => p.id === missingDirProjectId)?.name || ''}
-        projectPath={projects.find(p => p.id === missingDirProjectId)?.path || ''}
+        projectName={
+          projects.find((p) => p.id === missingDirProjectId)?.name || ""
+        }
+        projectPath={
+          projects.find((p) => p.id === missingDirProjectId)?.path || ""
+        }
         onRelocate={handleRelocateProject}
         onRemove={handleRemoveMissingProject}
       />
@@ -344,7 +425,7 @@ export const ProjectSidebar: React.FC = () => {
         className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent transition-colors"
         onMouseDown={handleResizeStart}
         style={{
-          userSelect: 'none',
+          userSelect: "none",
         }}
       />
     </div>
