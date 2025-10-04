@@ -20,6 +20,8 @@ export const ProjectSidebar: React.FC = () => {
   const [authProjectId, setAuthProjectId] = useState<string>('');
   const [deleteProjectId, setDeleteProjectId] = useState<string>('');
   const [missingDirProjectId, setMissingDirProjectId] = useState<string>('');
+  const [sidebarWidth, setSidebarWidth] = useState(256); // 16rem = 256px
+  const [isResizing, setIsResizing] = useState(false);
 
   // Sync project status on mount - check which projects are actually running
   useEffect(() => {
@@ -35,6 +37,37 @@ export const ProjectSidebar: React.FC = () => {
     };
     syncProjectStatuses();
   }, []); // Only run once on mount
+
+  // Handle sidebar resizing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = e.clientX;
+      // Constrain between 200px and 500px
+      if (newWidth >= 200 && newWidth <= 500) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const handleResizeStart = () => {
+    setIsResizing(true);
+  };
 
   // Listen for authentication errors from Blink processes
   useEffect(() => {
@@ -190,7 +223,10 @@ export const ProjectSidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-64 border-r border-border bg-card flex flex-col">
+    <div 
+      className="border-r border-border bg-card flex flex-col relative"
+      style={{ width: `${sidebarWidth}px` }}
+    >
       <div className="p-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Blink Desktop</h1>
         <ThemeToggle />
@@ -301,6 +337,15 @@ export const ProjectSidebar: React.FC = () => {
         projectPath={projects.find(p => p.id === missingDirProjectId)?.path || ''}
         onRelocate={handleRelocateProject}
         onRemove={handleRemoveMissingProject}
+      />
+
+      {/* Resize handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent transition-colors"
+        onMouseDown={handleResizeStart}
+        style={{
+          userSelect: 'none',
+        }}
       />
     </div>
   );
