@@ -152,10 +152,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         
         for (const tool of toolCalls) {
           assistantParts.push({
-            type: `tool-${tool.name}`,
+            type: 'tool_result',
             toolCallId: tool.id,
-            input: tool.input,
-            output: toolOutputs.get(tool.id)
+            toolName: tool.name,
+            result: toolOutputs.get(tool.id)
           });
         }
         
