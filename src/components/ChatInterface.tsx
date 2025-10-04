@@ -320,7 +320,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 }`}
               >
                 <div
-                  className={`max-w-[50%] rounded-lg p-3 ${
+                  className={`max-w-[75%] rounded-lg p-3 ${
                     message.role === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : isToolCall
