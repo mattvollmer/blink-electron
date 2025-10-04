@@ -512,21 +512,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
       <div className="border-t border-border p-4">
         <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            disabled={isLoading}
-          />
+          <div className="flex-1">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message..."
+              disabled={isLoading}
+            />
+            <div className="mt-2 flex justify-end">
+              <div className="text-xs text-muted-foreground">
+                {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
+              </div>
+            </div>
+          </div>
           <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
             <Send className="w-4 h-4" />
           </Button>
-        </div>
-        <div className="mt-2 flex justify-end">
-          <div className="text-xs text-muted-foreground">
-            {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
-          </div>
         </div>
       </div>
     </div>
