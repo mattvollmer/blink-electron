@@ -3,6 +3,7 @@ import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
+import http from "node:http";
 
 const execPromise = promisify(execCb);
 
@@ -169,14 +170,10 @@ class BlinkProcessManager {
         const checkPort = async (retries = 30): Promise<void> => {
           for (let i = 0; i < retries; i++) {
             try {
-              const http = require("http");
               await new Promise<void>((resolveCheck, rejectCheck) => {
-                const req = http.get(
-                  `http://127.0.0.1:${port}/`,
-                  (res: any) => {
-                    resolveCheck();
-                  },
-                );
+                const req = http.get(`http://127.0.0.1:${port}/`, () => {
+                  resolveCheck();
+                });
                 req.on("error", () => {
                   rejectCheck();
                 });
