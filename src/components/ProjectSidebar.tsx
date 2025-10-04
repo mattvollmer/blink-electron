@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
 import { InitProjectDialog } from './InitProjectDialog';
 import { AuthRequiredDialog } from './AuthRequiredDialog';
+import { DeleteProjectDialog } from './DeleteProjectDialog';
 import { ThemeToggle } from './ThemeToggle';
 import { toast } from 'sonner';
 
@@ -11,9 +12,11 @@ export const ProjectSidebar: React.FC = () => {
   const { projects, currentProjectId, addProject, removeProject, updateProject, setCurrentProject } = useProjectStore();
   const [showInitDialog, setShowInitDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
   const [authProjectPath, setAuthProjectPath] = useState<string>('');
   const [authProjectId, setAuthProjectId] = useState<string>('');
+  const [deleteProjectId, setDeleteProjectId] = useState<string>('');
 
   // Sync project status on mount - check which projects are actually running
   useEffect(() => {
@@ -107,8 +110,14 @@ export const ProjectSidebar: React.FC = () => {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    if (confirm('Are you sure you want to remove this project?')) {
-      removeProject(projectId);
+    setDeleteProjectId(projectId);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteProjectId) {
+      removeProject(deleteProjectId);
+      setDeleteProjectId('');
     }
   };
 
@@ -173,7 +182,7 @@ export const ProjectSidebar: React.FC = () => {
                   e.stopPropagation();
                   handleDeleteProject(project.id);
                 }}
-                className="text-muted-foreground hover:text-destructive ml-2"
+                className="text-foreground/60 hover:text-destructive dark:hover:text-red-400 ml-2"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -241,6 +250,13 @@ export const ProjectSidebar: React.FC = () => {
         projectPath={authProjectPath}
         projectId={authProjectId}
         onClose={handleAuthDialogClose}
+      />
+
+      <DeleteProjectDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        projectName={projects.find(p => p.id === deleteProjectId)?.name || ''}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );
