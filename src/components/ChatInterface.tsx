@@ -4,7 +4,14 @@ import { UIMessage } from "ai";
 import { BlinkProject, useProjectStore } from "../store/projectStore";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Send, ChevronRight, ChevronDown, Copy, Square } from "lucide-react";
+import {
+  Send,
+  ChevronRight,
+  ChevronDown,
+  Copy,
+  Square,
+  Play,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -390,11 +397,42 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   if (project.status !== "running") {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-medium">Project Not Running</h3>
-          <p className="text-muted-foreground">
-            Start the project to begin chatting
-          </p>
+        <div className="text-center space-y-4">
+          {project.status === "starting" ? (
+            <>
+              <h3 className="text-lg font-medium">Starting Project...</h3>
+              <p className="text-muted-foreground">
+                Please wait while the agent starts up
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-medium">Project Not Running</h3>
+              <p className="text-muted-foreground">
+                Start the project to begin chatting
+              </p>
+              <Button
+                onClick={async () => {
+                  const { updateProject } = useProjectStore.getState();
+                  updateProject(project.id, { status: "starting" });
+                  const result = await window.electronAPI.startBlinkProject(
+                    project.id,
+                    project.path,
+                    project.port,
+                  );
+                  if (result.success) {
+                    updateProject(project.id, { status: "running" });
+                  } else {
+                    updateProject(project.id, { status: "error" });
+                  }
+                }}
+                className="mt-4"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start Project
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
