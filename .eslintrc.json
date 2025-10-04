@@ -12,5 +12,15 @@
     "plugin:import/electron",
     "plugin:import/typescript"
   ],
-  "parser": "@typescript-eslint/parser"
+  "parser": "@typescript-eslint/parser",
+  "settings": {
+    "import/core-modules": ["blink"],
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts", ".tsx"],
+        "exportsFields": ["exports"],
+        "conditions": ["import", "require", "node"]
+      }
+    }
+  }
 }
