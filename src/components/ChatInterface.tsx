@@ -54,12 +54,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       }));
       
       const chatPayload = {
-        chat: {
-          id: 'default',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          messages: formattedMessages,
-        },
+        messages: formattedMessages,
       };
       console.log('Sending chat payload:', JSON.stringify(chatPayload, null, 2));
       
