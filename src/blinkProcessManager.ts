@@ -1,6 +1,11 @@
 import { spawn, ChildProcess } from 'child_process';
 import { BrowserWindow } from 'electron';
-import path from 'node:path';
+import * as fs from 'fs';
+import * as path from 'path';
+import { promisify } from 'util';
+import { exec } from 'child_process';
+
+const execPromise = promisify(exec);
 
 interface BlinkProcess {
   process: ChildProcess;
@@ -76,9 +81,30 @@ class BlinkProcessManager {
         }
 
         // Run the built agent with custom port via environment variable
+        // Read .env.production to get API keys
+        const envProdPath = path.join(projectPath, '.env.production');
+        let envVars: Record<string, string> = {};
+        
+        try {
+          const envContent = fs.readFileSync(envProdPath, 'utf-8');
+          // Simple .env parser
+          envContent.split('\n').forEach(line => {
+            line = line.trim();
+            if (line && !line.startsWith('#')) {
+              const [key, ...valueParts] = line.split('=');
+              if (key) {
+                envVars[key.trim()] = valueParts.join('=').trim();
+              }
+            }
+          });
+          console.log(`[${projectId}] Loaded env vars:`, Object.keys(envVars));
+        } catch (error) {
+          console.log(`[${projectId}] No .env.production file found`);
+        }
+        
         const blinkProcess = spawn('node', ['.blink/build/agent.js'], {
           cwd: projectPath,
-          env: { ...process.env, PORT: port.toString() },
+          env: { ...process.env, ...envVars, PORT: port.toString() },
           shell: true,
         });
 
