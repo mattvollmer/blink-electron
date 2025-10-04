@@ -59,6 +59,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const isMac =
     typeof navigator !== "undefined" &&
     navigator.platform.toLowerCase().includes("mac");
+  const mode = project.mode ?? "run";
+  const toggleMode = () => {
+    const { updateProject } = useProjectStore.getState();
+    updateProject(project.id, { mode: mode === "run" ? "edit" : "run" });
+  };
 
   useEffect(() => {
     if (project.status === "running") {
@@ -385,6 +390,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
+      e.preventDefault();
+      toggleMode();
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim()) {
@@ -597,10 +607,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your message..."
+              className={
+                mode === "edit"
+                  ? "border-yellow-500 focus-visible:ring-yellow-500"
+                  : undefined
+              }
             />
-            <div className="mt-2 flex justify-end">
-              <div className="text-xs text-muted-foreground">
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <div className="text-muted-foreground">
+                {isMac ? "Cmd" : "Ctrl"}+E: Toggle mode •{" "}
                 {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
+              </div>
+              <div
+                className={
+                  mode === "edit" ? "text-yellow-500" : "text-muted-foreground"
+                }
+              >
+                mode: {mode}
               </div>
             </div>
           </div>
