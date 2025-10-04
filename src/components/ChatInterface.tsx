@@ -88,6 +88,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
         // Decode the chunk and extract text from SSE format
         const chunk = decoder.decode(value, { stream: true });
+        console.log('Received chunk:', chunk);
         const lines = chunk.split('\n');
         
         for (const line of lines) {
