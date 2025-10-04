@@ -327,8 +327,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           </div>
         ) : (
           messages.map((message) => {
-            // Check if this is a tool call message
-            const isToolCall = message.content.includes('🔧 **');
+            // Check if this is a tool call message (starts with tool emoji and has Input:/Output:)
+            const isToolCall = message.content.startsWith('🔧 **') && 
+                             message.content.includes('Input:') && 
+                             message.content.includes('Output:');
             
             return (
               <div
