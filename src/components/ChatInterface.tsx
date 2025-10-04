@@ -347,12 +347,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             return (
               <div
                 key={message.id}
-                className={`flex ${
+                className={`flex gap-2 items-start ${
                   message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
+                {message.role === 'assistant' && (
+                  <button
+                    onClick={() => handleCopy(message.content)}
+                    className="mt-2 p-1 text-muted-foreground hover:text-foreground rounded"
+                    title="Copy message"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                )}
                 <div
-                  className={`max-w-[75%] rounded-lg p-3 group ${
+                  className={`max-w-[75%] rounded-lg p-3 ${
                     message.role === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : isToolCall
@@ -416,16 +425,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                     </div>
                   )}
                   </div>
-                  <div className="mt-2 flex justify-between items-center">
-                    <button
-                      onClick={() => handleCopy(message.content)}
-                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                    >
-                      <Copy className="w-3 h-3" />
-                      Copy
-                    </button>
-                  </div>
                 </div>
+                {message.role === 'user' && (
+                  <button
+                    onClick={() => handleCopy(message.content)}
+                    className="mt-2 p-1 text-muted-foreground hover:text-foreground rounded"
+                    title="Copy message"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             );
           })
