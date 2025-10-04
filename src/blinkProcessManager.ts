@@ -1,11 +1,10 @@
-import { spawn, ChildProcess } from "child_process";
+import { spawn, ChildProcess, exec as execCb } from "child_process";
 import { BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
-import { exec } from "child_process";
 
-const execPromise = promisify(exec);
+const execPromise = promisify(execCb);
 
 interface BlinkProcess {
   process: ChildProcess;
@@ -23,10 +22,6 @@ class BlinkProcessManager {
 
   private async killProcessOnPort(port: number): Promise<void> {
     try {
-      const { exec } = require("child_process");
-      const util = require("util");
-      const execPromise = util.promisify(exec);
-
       if (process.platform === "win32") {
         // Windows
         const { stdout } = await execPromise(`netstat -ano | findstr :${port}`);
