@@ -19,6 +19,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const [collapsedTools, setCollapsedTools] = useState<Set<string>>(new Set());
   const [client, setClient] = useState<Client | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   useEffect(() => {
     if (project.status === 'running') {
@@ -32,8 +34,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   }, [project.status, project.port]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (shouldAutoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, shouldAutoScroll]);
+
+  const handleScroll = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const isAtBottom = 
+      container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+    setShouldAutoScroll(isAtBottom);
+  };
 
   const handleSend = async () => {
     if (!input.trim() || !client || project.status !== 'running') return;
@@ -48,6 +61,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setShouldAutoScroll(true); // Always scroll when user sends a message
 
     try {
       // Convert messages to the format expected by Blink runtime
@@ -302,7 +316,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         <p className="text-sm text-muted-foreground">Port: {project.port}</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+      >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">Start a conversation with your agent</p>
