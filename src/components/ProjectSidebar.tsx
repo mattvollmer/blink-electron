@@ -100,12 +100,24 @@ export const ProjectSidebar: React.FC = () => {
     setShowAuthDialog(false);
     if (saved && authProjectId) {
       // Rebuild and restart the project
-      toast.loading('Rebuilding project...');
-      const result = await window.electronAPI.rebuildProject(authProjectId);
-      if (result.success) {
-        toast.success('Project rebuilt and restarted!');
-      } else {
-        toast.error(`Failed to rebuild: ${result.error}`);
+      const toastId = toast.loading('Rebuilding project...');
+      
+      try {
+        const result = await window.electronAPI.rebuildProject(authProjectId);
+        toast.dismiss(toastId);
+        
+        if (result.success) {
+          toast.success('Project rebuilt and restarted!');
+          // Update project status to running
+          updateProject(authProjectId, { status: 'running' });
+        } else {
+          toast.error(`Failed to rebuild: ${result.error}`);
+          updateProject(authProjectId, { status: 'error' });
+        }
+      } catch (error) {
+        toast.dismiss(toastId);
+        toast.error(`Error: ${error}`);
+        updateProject(authProjectId, { status: 'error' });
       }
     }
   };
