@@ -170,14 +170,48 @@ class BlinkProcessManager {
           projectPath,
         });
 
-        // Give it a moment to start up
-        setTimeout(() => {
-          if (this.processes.has(projectId)) {
-            resolve();
-          } else {
-            reject(new Error(`Failed to start project: ${startupError}`));
+        // Wait for the agent to actually be listening on the port
+        const checkPort = async (retries = 30): Promise<void> => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const http = require("http");
+              await new Promise<void>((resolveCheck, rejectCheck) => {
+                const req = http.get(
+                  `http://127.0.0.1:${port}/`,
+                  (res: any) => {
+                    resolveCheck();
+                  },
+                );
+                req.on("error", () => {
+                  rejectCheck();
+                });
+                req.setTimeout(500);
+              });
+              // Port is responding
+              console.log(`[${projectId}] Agent is ready on port ${port}`);
+              return;
+            } catch {
+              // Port not ready yet, wait and retry
+              await new Promise((r) => setTimeout(r, 200));
+            }
           }
-        }, 2000);
+          throw new Error(
+            `Agent failed to start on port ${port} after ${retries} retries`,
+          );
+        };
+
+        checkPort()
+          .then(() => {
+            if (this.processes.has(projectId)) {
+              resolve();
+            } else {
+              reject(new Error(`Failed to start project: ${startupError}`));
+            }
+          })
+          .catch((err) => {
+            this.processes.delete(projectId);
+            reject(err);
+          });
       });
     });
   }
