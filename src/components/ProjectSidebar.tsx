@@ -7,12 +7,27 @@ import { AuthRequiredDialog } from './AuthRequiredDialog';
 import { toast } from 'sonner';
 
 export const ProjectSidebar: React.FC = () => {
-  const { projects, currentProjectId, setCurrentProject, addProject, removeProject, updateProject } = useProjectStore();
+  const { projects, addProject, removeProject, updateProject, setCurrentProject } = useProjectStore();
   const [showInitDialog, setShowInitDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
   const [authProjectPath, setAuthProjectPath] = useState<string>('');
   const [authProjectId, setAuthProjectId] = useState<string>('');
+
+  // Sync project status on mount - check which projects are actually running
+  useEffect(() => {
+    const syncProjectStatuses = async () => {
+      for (const project of projects) {
+        const isRunning = await window.electronAPI.isProjectRunning(project.id);
+        if (isRunning && project.status !== 'running') {
+          updateProject(project.id, { status: 'running' });
+        } else if (!isRunning && project.status === 'running') {
+          updateProject(project.id, { status: 'stopped' });
+        }
+      }
+    };
+    syncProjectStatuses();
+  }, []); // Only run once on mount
 
   // Listen for authentication errors from Blink processes
   useEffect(() => {

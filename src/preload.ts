@@ -30,6 +30,9 @@ const api = {
   rebuildProject: (projectId: string) =>
     ipcRenderer.invoke('rebuild-project', projectId),
   
+  isProjectRunning: (projectId: string) =>
+    ipcRenderer.invoke('is-project-running', projectId),
+  
   onBlinkLog: (callback: (data: { projectId: string; level: string; message: string }) => void) => {
     const subscription = (_event: any, data: any) => callback(data);
     ipcRenderer.on('blink:log', subscription);
