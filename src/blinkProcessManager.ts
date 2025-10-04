@@ -11,7 +11,7 @@ import { homedir } from "os";
 const execPromise = promisify(execCb);
 
 // Get Blink auth token from XDG data directory
-function getBlinkAuthToken(): string | undefined {
+function getBlinkAuthToken(projectPath?: string): string | undefined {
   try {
     // XDG data directory for Blink (matches xdg-app-paths behavior)
     const xdgDataHome =
@@ -21,6 +21,24 @@ function getBlinkAuthToken(): string | undefined {
     if (fs.existsSync(authPath)) {
       const data = JSON.parse(fs.readFileSync(authPath, "utf8"));
       return data.token;
+    }
+
+    // Fallback: check project .env files for BLINK_TOKEN
+    if (projectPath) {
+      const envFiles = [
+        path.join(projectPath, ".env"),
+        path.join(projectPath, ".env.local"),
+      ];
+
+      for (const envFile of envFiles) {
+        if (fs.existsSync(envFile)) {
+          const envContent = fs.readFileSync(envFile, "utf8");
+          const match = envContent.match(/^BLINK_TOKEN=(.+)$/m);
+          if (match && match[1]) {
+            return match[1].trim();
+          }
+        }
+      }
     }
   } catch (error) {
     console.error("[ProcessManager] Error reading Blink auth token:", error);
@@ -238,7 +256,7 @@ class BlinkProcessManager {
         // Start a simple Edit Agent on a random port
         (async () => {
           // Set Blink auth token if available
-          const blinkToken = getBlinkAuthToken();
+          const blinkToken = getBlinkAuthToken(projectPath);
           if (blinkToken) {
             process.env.BLINK_TOKEN = blinkToken;
             console.log(
