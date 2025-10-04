@@ -347,12 +347,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                         ) : (
                           <ChevronDown className="w-3 h-3" />
                         )}
-                        <span>🔧 {message.content.match(/\*\*(.+?)\*\*/)?.[1] || 'Tool Call'}</span>
+                        <span className="font-semibold">🔧 {message.content.match(/\*\*(.+?)\*\*/)?.[1] || 'Tool Call'}</span>
                       </button>
                       {!collapsedTools.has(message.id) && (
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
+                            h2: ({ node, children, ...props }) => {
+                              // Hide h2 that contains tool emoji (tool name header)
+                              const text = String(children);
+                              if (text.includes('🔧')) return null;
+                              return <h2 {...props}>{children}</h2>;
+                            },
                             pre: ({ node, ...props }) => (
                               <pre className="text-[10px] overflow-x-auto" {...props} />
                             ),
