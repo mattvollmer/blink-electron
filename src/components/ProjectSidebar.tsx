@@ -5,6 +5,7 @@ import { FolderPlus, Play, Square, Trash2 } from 'lucide-react';
 import { InitProjectDialog } from './InitProjectDialog';
 import { AuthRequiredDialog } from './AuthRequiredDialog';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
+import { MissingDirectoryDialog } from './MissingDirectoryDialog';
 import { ThemeToggle } from './ThemeToggle';
 import { toast } from 'sonner';
 
@@ -13,10 +14,14 @@ export const ProjectSidebar: React.FC = () => {
   const [showInitDialog, setShowInitDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showMissingDirDialog, setShowMissingDirDialog] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string>('');
   const [authProjectPath, setAuthProjectPath] = useState<string>('');
   const [authProjectId, setAuthProjectId] = useState<string>('');
   const [deleteProjectId, setDeleteProjectId] = useState<string>('');
+  const [missingDirProjectId, setMissingDirProjectId] = useState<string>('');
+  const [sidebarWidth, setSidebarWidth] = useState(256); // 16rem = 256px
+  const [isResizing, setIsResizing] = useState(false);
 
   // Sync project status on mount - check which projects are actually running
   useEffect(() => {
@@ -32,6 +37,37 @@ export const ProjectSidebar: React.FC = () => {
     };
     syncProjectStatuses();
   }, []); // Only run once on mount
+
+  // Handle sidebar resizing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = e.clientX;
+      // Constrain between 200px and 500px
+      if (newWidth >= 200 && newWidth <= 500) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const handleResizeStart = () => {
+    setIsResizing(true);
+  };
 
   // Listen for authentication errors from Blink processes
   useEffect(() => {
@@ -92,6 +128,14 @@ export const ProjectSidebar: React.FC = () => {
   };
 
   const handleStartProject = async (projectId: string, projectPath: string, port: number) => {
+    // Check if directory exists first
+    const dirCheck = await window.electronAPI.checkDirectoryExists(projectPath);
+    if (!dirCheck.exists) {
+      setMissingDirProjectId(projectId);
+      setShowMissingDirDialog(true);
+      return;
+    }
+
     updateProject(projectId, { status: 'starting' });
     
     const result = await window.electronAPI.startBlinkProject(projectId, projectPath, port);
@@ -119,6 +163,30 @@ export const ProjectSidebar: React.FC = () => {
       removeProject(deleteProjectId);
       setDeleteProjectId('');
     }
+  };
+
+  const handleRelocateProject = async () => {
+    const newPath = await window.electronAPI.selectDirectory();
+    if (!newPath || !missingDirProjectId) return;
+
+    const project = projects.find(p => p.id === missingDirProjectId);
+    if (!project) return;
+
+    // Update project with new path and name
+    const newName = newPath.split('/').pop() || project.name;
+    updateProject(missingDirProjectId, { path: newPath, name: newName });
+    
+    setShowMissingDirDialog(false);
+    setMissingDirProjectId('');
+    toast.success(`Project relocated to: ${newPath}`);
+  };
+
+  const handleRemoveMissingProject = () => {
+    if (missingDirProjectId) {
+      removeProject(missingDirProjectId);
+      setMissingDirProjectId('');
+    }
+    setShowMissingDirDialog(false);
   };
 
   const handleAuthDialogClose = async (saved: boolean) => {
@@ -155,7 +223,10 @@ export const ProjectSidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-64 border-r border-border bg-card flex flex-col">
+    <div 
+      className="border-r border-border bg-card flex flex-col relative"
+      style={{ width: `${sidebarWidth}px` }}
+    >
       <div className="p-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Blink Desktop</h1>
         <ThemeToggle />
@@ -175,7 +246,7 @@ export const ProjectSidebar: React.FC = () => {
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium truncate">{project.name}</h3>
-                <p className="text-xs text-muted-foreground truncate">{project.path}</p>
+                <p className="text-xs text-muted-foreground truncate" style={{ direction: 'rtl', textAlign: 'left' }}>{project.path}</p>
               </div>
               <button
                 onClick={(e) => {
@@ -210,7 +281,7 @@ export const ProjectSidebar: React.FC = () => {
                     e.stopPropagation();
                     handleStartProject(project.id, project.path, project.port);
                   }}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300"
                 >
                   <Play className="w-4 h-4" />
                 </button>
@@ -220,7 +291,7 @@ export const ProjectSidebar: React.FC = () => {
                     e.stopPropagation();
                     handleStopProject(project.id);
                   }}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300"
                 >
                   <Square className="w-4 h-4" />
                 </button>
@@ -257,6 +328,24 @@ export const ProjectSidebar: React.FC = () => {
         onOpenChange={setShowDeleteDialog}
         projectName={projects.find(p => p.id === deleteProjectId)?.name || ''}
         onConfirm={handleConfirmDelete}
+      />
+
+      <MissingDirectoryDialog
+        open={showMissingDirDialog}
+        onOpenChange={setShowMissingDirDialog}
+        projectName={projects.find(p => p.id === missingDirProjectId)?.name || ''}
+        projectPath={projects.find(p => p.id === missingDirProjectId)?.path || ''}
+        onRelocate={handleRelocateProject}
+        onRemove={handleRemoveMissingProject}
+      />
+
+      {/* Resize handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-accent transition-colors"
+        onMouseDown={handleResizeStart}
+        style={{
+          userSelect: 'none',
+        }}
       />
     </div>
   );

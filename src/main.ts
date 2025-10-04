@@ -101,6 +101,15 @@ ipcMain.handle('check-blink-project', async (event, projectPath: string) => {
   }
 });
 
+ipcMain.handle('check-directory-exists', async (event, directoryPath: string) => {
+  try {
+    const stats = await fs.stat(directoryPath);
+    return { exists: stats.isDirectory() };
+  } catch {
+    return { exists: false };
+  }
+});
+
 ipcMain.handle('init-blink-project', async (event, projectPath: string) => {
   try {
     // Run blink init in the project directory
