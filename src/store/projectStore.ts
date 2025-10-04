@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface BlinkProject {
   id: string;
@@ -21,7 +22,8 @@ interface ProjectStore {
   getCurrentProject: () => BlinkProject | undefined;
 }
 
-export const useProjectStore = create<ProjectStore>((set, get) => ({
+export const useProjectStore = create<ProjectStore>()(persist(
+  (set, get) => ({
   projects: [],
   currentProjectId: null,
 
@@ -59,4 +61,9 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const { projects, currentProjectId } = get();
     return projects.find((p) => p.id === currentProjectId);
   },
-}));
+}),
+  {
+    name: 'blink-project-store',
+    getStorage: () => localStorage,
+  },
+));
