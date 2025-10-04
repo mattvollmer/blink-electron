@@ -48,12 +48,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
 
     try {
       const stream = await client.chat({
-        messages: [...messages, userMessage],
         chat: {
           id: 'default',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          messages: [],
+          messages: [...messages, userMessage],
         },
       });
 
