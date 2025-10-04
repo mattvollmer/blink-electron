@@ -2,7 +2,10 @@ import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 import { blinkProcessManager } from "./blinkProcessManager";
-import fs from "fs/promises";
+import fs from "node:fs/promises";
+import fsSync from "node:fs";
+import os from "node:os";
+import { spawn } from "node:child_process";
 import WebSocket from "ws";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -157,7 +160,6 @@ ipcMain.handle(
 ipcMain.handle("init-blink-project", async (event, projectPath: string) => {
   try {
     // Run blink init in the project directory
-    const { spawn } = require("child_process");
 
     return new Promise((resolve) => {
       const initProcess = spawn("blink", ["init"], {
@@ -226,9 +228,6 @@ ipcMain.handle("run-blink-login", async (event) => {
           console.log("[Blink Auth] Received token");
 
           // Save token using Blink's auth system
-          const os = require("os");
-          const path = require("path");
-          const fs = require("fs");
 
           // Determine Blink data directory
           const homeDir = os.homedir();
@@ -248,8 +247,8 @@ ipcMain.handle("run-blink-login", async (event) => {
           }
 
           // Create directory if it doesn't exist
-          if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
+          if (!fsSync.existsSync(dataDir)) {
+            fsSync.mkdirSync(dataDir, { recursive: true });
           }
 
           // Save auth.json
@@ -259,7 +258,7 @@ ipcMain.handle("run-blink-login", async (event) => {
             token: token,
           };
 
-          fs.writeFileSync(authPath, JSON.stringify(authData, null, 2));
+          fsSync.writeFileSync(authPath, JSON.stringify(authData, null, 2));
 
           ws.close();
           if (!resolved) {
