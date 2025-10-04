@@ -97,24 +97,31 @@ export const ProjectSidebar: React.FC = () => {
   };
 
   const handleAuthDialogClose = async (saved: boolean) => {
+    console.log('[handleAuthDialogClose] Called with saved:', saved, 'projectId:', authProjectId);
     setShowAuthDialog(false);
+    
     if (saved && authProjectId) {
       // Rebuild and restart the project
       const toastId = toast.loading('Rebuilding project...');
+      console.log('[handleAuthDialogClose] Starting rebuild...');
       
       try {
         const result = await window.electronAPI.rebuildProject(authProjectId);
+        console.log('[handleAuthDialogClose] Rebuild result:', result);
         toast.dismiss(toastId);
         
         if (result.success) {
+          console.log('[handleAuthDialogClose] Rebuild successful, updating project status');
           toast.success('Project rebuilt and restarted!');
           // Update project status to running
           updateProject(authProjectId, { status: 'running' });
         } else {
+          console.error('[handleAuthDialogClose] Rebuild failed:', result.error);
           toast.error(`Failed to rebuild: ${result.error}`);
           updateProject(authProjectId, { status: 'error' });
         }
       } catch (error) {
+        console.error('[handleAuthDialogClose] Exception during rebuild:', error);
         toast.dismiss(toastId);
         toast.error(`Error: ${error}`);
         updateProject(authProjectId, { status: 'error' });
