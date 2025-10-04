@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { ProjectSidebar } from "./components/ProjectSidebar";
 import { ChatInterface } from "./components/ChatInterface";
 import { useProjectStore } from "./store/projectStore";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 
 export const App: React.FC = () => {
   const { projects, currentProjectId } = useProjectStore();
@@ -15,6 +15,7 @@ export const App: React.FC = () => {
       const id = state.currentProjectId;
       if (id) {
         state.setProjectMessages(id, []);
+        toast.success("Chat context cleared");
       }
     });
     return unsubscribe;
