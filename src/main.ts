@@ -94,47 +94,51 @@ ipcMain.handle("select-directory", async () => {
 
 ipcMain.handle(
   "start-blink-project",
-  async (event, projectId: string, projectPath: string, port: number) => {
+  async (_event, projectId: string, projectPath: string, port: number) => {
     try {
       await blinkProcessManager.startProject(projectId, projectPath, port);
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message };
     }
   },
 );
 
-ipcMain.handle("stop-blink-project", async (event, projectId: string) => {
+ipcMain.handle("stop-blink-project", async (_event, projectId: string) => {
   try {
     blinkProcessManager.stopProject(projectId);
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
   }
 });
 
-ipcMain.handle("read-file", async (event, filePath: string) => {
+ipcMain.handle("read-file", async (_event, filePath: string) => {
   try {
     const content = await fs.readFile(filePath, "utf-8");
     return { success: true, content };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
   }
 });
 
 ipcMain.handle(
   "write-file",
-  async (event, filePath: string, content: string) => {
+  async (_event, filePath: string, content: string) => {
     try {
       await fs.writeFile(filePath, content, "utf-8");
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message };
     }
   },
 );
 
-ipcMain.handle("check-blink-project", async (event, projectPath: string) => {
+ipcMain.handle("check-blink-project", async (_event, projectPath: string) => {
   try {
     // Check if agent.ts exists
     const agentPath = path.join(projectPath, "agent.ts");
@@ -147,7 +151,7 @@ ipcMain.handle("check-blink-project", async (event, projectPath: string) => {
 
 ipcMain.handle(
   "check-directory-exists",
-  async (event, directoryPath: string) => {
+  async (_event, directoryPath: string) => {
     try {
       const stats = await fs.stat(directoryPath);
       return { exists: stats.isDirectory() };
@@ -157,7 +161,7 @@ ipcMain.handle(
   },
 );
 
-ipcMain.handle("init-blink-project", async (event, projectPath: string) => {
+ipcMain.handle("init-blink-project", async (_event, projectPath: string) => {
   try {
     // Run blink init in the project directory
 
@@ -190,12 +194,14 @@ ipcMain.handle("init-blink-project", async (event, projectPath: string) => {
         resolve({ success: false, error: error.message });
       });
     });
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
   }
 });
 
-ipcMain.handle("run-blink-login", async (event) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ipcMain.handle("run-blink-login", async (_event) => {
   try {
     return new Promise((resolve) => {
       // Generate a unique ID for this auth session
@@ -265,11 +271,13 @@ ipcMain.handle("run-blink-login", async (event) => {
             resolved = true;
             resolve({ success: true });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           ws.close();
           if (!resolved) {
             resolved = true;
-            resolve({ success: false, error: error.message });
+            const message =
+              error instanceof Error ? error.message : String(error);
+            resolve({ success: false, error: message });
           }
         }
       });
@@ -311,14 +319,15 @@ ipcMain.handle("run-blink-login", async (event) => {
         2 * 60 * 1000,
       );
     });
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
   }
 });
 
 ipcMain.handle(
   "update-agent-api-key",
-  async (event, projectPath: string, apiKey: string, provider: string) => {
+  async (_event, projectPath: string, apiKey: string, provider: string) => {
     try {
       console.log("[update-agent-api-key] Project path:", projectPath);
       console.log("[update-agent-api-key] Provider:", provider);
@@ -402,13 +411,14 @@ ipcMain.handle(
       );
 
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message };
     }
   },
 );
 
-ipcMain.handle("rebuild-project", async (event, projectId: string) => {
+ipcMain.handle("rebuild-project", async (_event, projectId: string) => {
   try {
     console.log("[rebuild-project] Starting rebuild for project:", projectId);
 
@@ -446,35 +456,38 @@ ipcMain.handle("rebuild-project", async (event, projectId: string) => {
     console.log("[rebuild-project] Project started successfully");
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("[rebuild-project] Error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: message };
   }
 });
 
-ipcMain.handle("is-project-running", async (event, projectId: string) => {
+ipcMain.handle("is-project-running", async (_event, projectId: string) => {
   return blinkProcessManager.isRunning(projectId);
 });
 
-ipcMain.handle("read-agent-file", async (event, projectPath: string) => {
+ipcMain.handle("read-agent-file", async (_event, projectPath: string) => {
   try {
     const agentPath = path.join(projectPath, "agent.ts");
     const content = await fs.readFile(agentPath, "utf-8");
     return { success: true, content };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
   }
 });
 
 ipcMain.handle(
   "write-agent-file",
-  async (event, projectPath: string, content: string) => {
+  async (_event, projectPath: string, content: string) => {
     try {
       const agentPath = path.join(projectPath, "agent.ts");
       await fs.writeFile(agentPath, content, "utf-8");
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message };
     }
   },
 );
