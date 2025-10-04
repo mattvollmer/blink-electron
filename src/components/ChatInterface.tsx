@@ -92,12 +92,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
         const lines = chunk.split('\n');
         
         for (const line of lines) {
-          if (line.startsWith('0:')) {
-            // Text delta from AI SDK stream
+          if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.substring(2));
-              if (data) {
-                assistantMessage += data;
+              const data = JSON.parse(line.substring(6));
+              
+              // Handle text deltas
+              if (data.type === 'text-delta' && data.delta) {
+                assistantMessage += data.delta;
                 setMessages((prev) => {
                   const existing = prev.find((m) => m.id === assistantId);
                   if (existing) {
