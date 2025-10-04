@@ -3,6 +3,7 @@ import { Client } from "blink/client";
 import { BlinkProject, useProjectStore } from "../store/projectStore";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { toast } from "sonner";
 import {
   Send,
   ChevronRight,
@@ -72,7 +73,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     console.log(
       `[Mode Toggle] Switching from ${mode} to ${mode === "run" ? "edit" : "run"}`,
     );
+    const newMode = mode === "run" ? "edit" : "run";
     updateProject(project.id, { mode: mode === "run" ? "edit" : "run" });
+    toast.info(`Switched to ${newMode === "edit" ? "Edit" : "Run"} mode`, {
+      description:
+        newMode === "edit"
+          ? "AI will help you build and modify your agent code"
+          : "Chat with your agent to see how it behaves",
+    });
   };
 
   useEffect(() => {
@@ -135,6 +143,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
       role: "user",
       content: userMessageContent,
       createdAt: new Date(),
+      metadata: { mode }, // Store which mode this message was sent in
     };
 
     addProjectMessage(project.id, userMessage);
@@ -492,6 +501,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                   message.role === "user" ? "items-end" : "items-start"
                 }`}
               >
+                {message.metadata?.mode && (
+                  <span
+                    className={`text-[10px] mb-1 px-2 py-0.5 rounded ${
+                      message.metadata.mode === "edit"
+                        ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                        : "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                    }`}
+                  >
+                    {message.metadata.mode === "edit"
+                      ? "Edit Mode"
+                      : "Run Mode"}
+                  </span>
+                )}
                 <div
                   className={`max-w-[75%] rounded-lg p-3 ${
                     message.role === "user"

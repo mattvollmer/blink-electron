@@ -145,7 +145,7 @@ export const ProjectSidebar: React.FC = () => {
   const addProjectToList = (projectPath: string) => {
     const port = 3000 + projects.length;
     const name = projectPath.split("/").pop() || "Unnamed Project";
-    addProject({ name, path: projectPath, port });
+    addProject({ name, path: projectPath, port, messages: [] });
   };
 
   const handleStartProject = async (
