@@ -626,7 +626,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                           : "text-muted-foreground flex items-center gap-1"
                       }
                     >
-                      mode: {mode}
+                      Mode: {mode}
                       <Info className="w-3 h-3" />
                     </div>
                   </TooltipTrigger>
@@ -639,10 +639,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <div className="text-muted-foreground">
-                {isMac ? "Cmd" : "Ctrl"}+E: Switch to{" "}
-                {mode === "run" ? "edit" : "run"} • {isMac ? "Cmd" : "Ctrl"}+R:
-                Clears chat
+              <div className="text-muted-foreground flex gap-3">
+                <span>
+                  {isMac ? "Cmd" : "Ctrl"}+E: Switch to{" "}
+                  {mode === "run" ? "edit" : "run"}
+                </span>
+                <span>{isMac ? "Cmd" : "Ctrl"}+R: Clears chat</span>
               </div>
             </div>
           </div>
