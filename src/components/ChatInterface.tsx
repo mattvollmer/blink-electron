@@ -157,7 +157,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
           role: 'assistant' as const,
           content: toolCalls.map(tool => {
             const output = toolOutputs.get(tool.id);
-            return `<!-- toolName: ${tool.name} -->\n\`\`\`json\nInput: ${JSON.stringify(tool.input, null, 2)}\n\nOutput: ${JSON.stringify(output, null, 2)}\n\`\`\``;
+            return `🔧 **${tool.name}**\n\`\`\`json\nInput: ${JSON.stringify(tool.input, null, 2)}\n\nOutput: ${JSON.stringify(output, null, 2)}\n\`\`\``;
           }).join('\n\n'),
           createdAt: new Date(Date.now() + 1), // Ensure it comes after first message
         };
@@ -347,7 +347,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                         ) : (
                           <ChevronDown className="w-3 h-3" />
                         )}
-                        <span className="font-semibold">🔧 {message.content.match(/<!-- toolName: (.+?) -->/)?.[1] || 'Tool Call'}</span>
+                        <span>🔧 {message.content.match(/\*\*(.+?)\*\*/)?.[1] || 'Tool Call'}</span>
                       </button>
                       {!collapsedTools.has(message.id) && (
                         <ReactMarkdown
@@ -361,7 +361,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                             ),
                           }}
                         >
-                          {message.content.replace(/<!-- toolName: .+? -->\n?/g, '')}
+                          {message.content}
                         </ReactMarkdown>
                       )}
                     </div>
