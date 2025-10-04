@@ -375,6 +375,26 @@ ipcMain.handle('is-project-running', async (event, projectId: string) => {
   return blinkProcessManager.isRunning(projectId);
 });
 
+ipcMain.handle('read-agent-file', async (event, projectPath: string) => {
+  try {
+    const agentPath = path.join(projectPath, 'agent.ts');
+    const content = await fs.readFile(agentPath, 'utf-8');
+    return { success: true, content };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('write-agent-file', async (event, projectPath: string, content: string) => {
+  try {
+    const agentPath = path.join(projectPath, 'agent.ts');
+    await fs.writeFile(agentPath, content, 'utf-8');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.

@@ -47,10 +47,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setIsLoading(true);
 
     try {
-      // Convert messages to the format expected by the agent (only role and content)
+      // Convert messages to the format expected by AI SDK CoreMessage
       const formattedMessages = [...messages, userMessage].map(msg => ({
         role: msg.role,
-        content: msg.content,
+        content: [
+          {
+            type: 'text',
+            text: msg.content,
+          }
+        ],
       }));
       
       console.log('Sending messages:', JSON.stringify(formattedMessages, null, 2));
