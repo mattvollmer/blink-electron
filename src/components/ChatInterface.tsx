@@ -4,7 +4,7 @@ import { UIMessage } from 'ai';
 import { BlinkProject } from '../store/projectStore';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, ChevronRight, ChevronDown } from 'lucide-react';
+import { Send, ChevronRight, ChevronDown, Copy } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -47,6 +47,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     const isAtBottom = 
       container.scrollHeight - container.scrollTop - container.clientHeight < 50;
     setShouldAutoScroll(isAtBottom);
+  };
+
+  const handleCopy = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
   const handleSend = async () => {
@@ -344,7 +352,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                 }`}
               >
                 <div
-                  className={`max-w-[75%] rounded-lg p-3 ${
+                  className={`max-w-[75%] rounded-lg p-3 group ${
                     message.role === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : isToolCall
@@ -352,6 +360,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                       : 'bg-muted'
                   }`}
                 >
+                  <div>
                   {isToolCall ? (
                     <div className="text-xs font-mono space-y-2">
                       <button
@@ -406,6 +415,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                       </ReactMarkdown>
                     </div>
                   )}
+                  </div>
+                  <div className="mt-2 flex justify-between items-center">
+                    <button
+                      onClick={() => handleCopy(message.content)}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy
+                    </button>
+                  </div>
                 </div>
               </div>
             );
