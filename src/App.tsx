@@ -41,7 +41,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      <Toaster position="top-center" closeButton />
+      <Toaster position="top-right" closeButton />
       <ProjectSidebar />
 
       <div className="flex-1 flex flex-col">
