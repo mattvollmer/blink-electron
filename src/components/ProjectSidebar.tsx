@@ -182,7 +182,7 @@ export const ProjectSidebar: React.FC = () => {
                   e.stopPropagation();
                   handleDeleteProject(project.id);
                 }}
-                className="text-foreground/60 hover:text-destructive ml-2"
+                className="text-foreground/60 hover:text-destructive dark:hover:text-red-400 ml-2"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
