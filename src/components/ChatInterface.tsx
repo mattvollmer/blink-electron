@@ -10,9 +10,16 @@ import {
   Copy,
   Square,
   Play,
+  Info,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface ChatInterfaceProps {
   project: BlinkProject;
@@ -59,17 +66,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   const isMac =
     typeof navigator !== "undefined" &&
     navigator.platform.toLowerCase().includes("mac");
+  const mode = project.mode ?? "run";
+  const toggleMode = () => {
+    const { updateProject } = useProjectStore.getState();
+    updateProject(project.id, { mode: mode === "run" ? "edit" : "run" });
+  };
 
   useEffect(() => {
-    if (project.status === "running") {
-      const blinkClient = new Client({
-        baseUrl: `http://localhost:${project.port}`,
-      });
-      setClient(blinkClient);
-    } else {
-      setClient(null);
-    }
-  }, [project.status, project.port]);
+    const targetPort =
+      mode === "edit" && project.editPort ? project.editPort : project.port;
+    const blinkClient = new Client({
+      baseUrl: `http://127.0.0.1:${targetPort}`,
+    });
+    setClient(blinkClient);
+  }, [project.status, project.port, project.editPort, mode]);
 
   // Handle app-level stop-streams (fired before Cmd/Ctrl+R clears chat)
   useEffect(() => {
@@ -420,7 +430,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                     project.port,
                   );
                   if (result.success) {
-                    updateProject(project.id, { status: "running" });
+                    updateProject(project.id, {
+                      status: "running",
+                      editPort: result.editPort,
+                    });
                   } else {
                     updateProject(project.id, { status: "error" });
                   }
@@ -597,10 +610,42 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your message..."
+              className={
+                mode === "edit"
+                  ? "border-yellow-500 focus-visible:ring-yellow-500"
+                  : undefined
+              }
             />
-            <div className="mt-2 flex justify-end">
-              <div className="text-xs text-muted-foreground">
-                {isMac ? "Cmd" : "Ctrl"}+R: Clears chat
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <TooltipProvider>
+                <Tooltip delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={
+                        mode === "edit"
+                          ? "text-yellow-500 flex items-center gap-1"
+                          : "text-muted-foreground flex items-center gap-1"
+                      }
+                    >
+                      Mode: {mode === "run" ? "Run" : "Edit"}
+                      <Info className="w-3 h-3" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="start">
+                    {mode === "run" ? (
+                      <p>Chat with your agent to see how it behaves</p>
+                    ) : (
+                      <p>AI helps you build and modify your agent code</p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="text-muted-foreground flex gap-3">
+                <span>
+                  {isMac ? "Cmd" : "Ctrl"}+E: Switch to{" "}
+                  {mode === "run" ? "Edit" : "Run"}
+                </span>
+                <span>{isMac ? "Cmd" : "Ctrl"}+R: Clears chat</span>
               </div>
             </div>
           </div>

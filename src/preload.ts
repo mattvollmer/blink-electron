@@ -4,7 +4,11 @@ const api = {
   selectDirectory: () => ipcRenderer.invoke("select-directory"),
 
   startBlinkProject: (projectId: string, projectPath: string, port: number) =>
-    ipcRenderer.invoke("start-blink-project", projectId, projectPath, port),
+    ipcRenderer
+      .invoke("start-blink-project", projectId, projectPath, port)
+      .then((response) => {
+        return { editPort: response.editPort, ...response };
+      }),
 
   stopBlinkProject: (projectId: string) =>
     ipcRenderer.invoke("stop-blink-project", projectId),
@@ -78,6 +82,10 @@ const api = {
       ipcRenderer.removeListener("app:stop-streams", subscription);
       // Ensuring the return type is void
     };
+  },
+
+  getProjectInfo: (projectId: string) => {
+    return ipcRenderer.invoke("get-project-info", projectId);
   },
 };
 

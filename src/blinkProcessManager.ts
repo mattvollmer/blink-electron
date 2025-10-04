@@ -4,6 +4,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
 import http from "node:http";
+import * as blink from "blink";
+import { convertToModelMessages, streamText } from "ai";
 
 const execPromise = promisify(execCb);
 
@@ -11,6 +13,8 @@ interface BlinkProcess {
   process: ChildProcess;
   port: number;
   projectPath: string;
+  editPort?: number;
+  editServer?: { close: () => void };
 }
 
 class BlinkProcessManager {
@@ -160,11 +164,12 @@ class BlinkProcessManager {
         });
 
         // Store the process
-        this.processes.set(projectId, {
+        const proc: BlinkProcess = {
           process: blinkProcess,
           port,
           projectPath,
-        });
+        };
+        this.processes.set(projectId, proc);
 
         // Wait for the agent to actually be listening on the port
         const checkPort = async (retries = 30): Promise<void> => {
@@ -204,6 +209,38 @@ class BlinkProcessManager {
             this.processes.delete(projectId);
             reject(err);
           });
+
+        // Start a simple Edit Agent on a random port
+        (async () => {
+          const editPort = await getRandomPort();
+          const editAgent = blink.agent();
+          editAgent.on("chat", async ({ messages }) => {
+            const converted = convertToModelMessages(messages, {
+              ignoreIncompleteToolCalls: true,
+            });
+            return streamText({
+              model: blink.model("anthropic/claude-sonnet-4.5"),
+              messages: converted,
+            });
+          });
+          const server = editAgent.serve({
+            port: editPort,
+            host: "127.0.0.1",
+          });
+          const p = this.processes.get(projectId);
+          if (p) {
+            p.editPort = editPort;
+            p.editServer = server;
+          }
+          console.log(`[${projectId}] Edit agent ready on port ${editPort}`);
+          if (this.processes.has(projectId)) {
+            resolve();
+          } else {
+            reject(new Error(`Failed to start project: ${startupError}`));
+          }
+        })().catch((err) => {
+          reject(err);
+        });
       });
     });
   }
@@ -211,6 +248,9 @@ class BlinkProcessManager {
   stopProject(projectId: string): void {
     const process = this.processes.get(projectId);
     if (process) {
+      try {
+        process.editServer?.close();
+      } catch {}
       process.process.kill();
       this.processes.delete(projectId);
     }
@@ -232,7 +272,7 @@ class BlinkProcessManager {
 
   getProjectInfo(
     projectId: string,
-  ): { projectPath: string; port: number } | null {
+  ): { projectPath: string; port: number; editPort?: number } | null {
     const process = this.processes.get(projectId);
     if (!process) {
       return null;
@@ -240,8 +280,29 @@ class BlinkProcessManager {
     return {
       projectPath: process.projectPath,
       port: process.port,
+      editPort: process.editPort,
     };
   }
 }
 
 export const blinkProcessManager = new BlinkProcessManager();
+
+async function getRandomPort(): Promise<number> {
+  return await new Promise<number>((resolve, reject) => {
+    const srv = http.createServer((_req, res) => res.end("ok"));
+    srv.listen(0, "127.0.0.1", () => {
+      const address = srv.address();
+      if (
+        typeof address === "object" &&
+        address &&
+        typeof address.port === "number"
+      ) {
+        const port = address.port;
+        srv.close(() => resolve(port));
+      } else {
+        srv.close(() => reject(new Error("Failed to allocate port")));
+      }
+    });
+    srv.on("error", (e) => reject(e));
+  });
+}

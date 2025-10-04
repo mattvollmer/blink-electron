@@ -14,6 +14,8 @@ export interface BlinkProject {
     content: string;
     createdAt: Date;
   }>;
+  mode?: "run" | "edit";
+  editPort?: number;
 }
 
 interface ProjectStore {
@@ -48,6 +50,7 @@ export const useProjectStore = create<ProjectStore>()(
           ...project,
           id,
           status: "stopped",
+          mode: "run",
         };
         set((state) => ({
           projects: [...state.projects, newProject],
