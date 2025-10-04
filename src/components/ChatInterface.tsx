@@ -390,11 +390,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
-      e.preventDefault();
-      toggleMode();
-      return;
-    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim()) {

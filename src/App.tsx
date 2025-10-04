@@ -39,6 +39,26 @@ export const App: React.FC = () => {
     return unsubscribe;
   }, []);
 
+  // Handle global Ctrl/Cmd+E to toggle mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
+        e.preventDefault();
+        const state = useProjectStore.getState();
+        const id = state.currentProjectId;
+        if (id) {
+          const project = state.projects.find((p) => p.id === id);
+          if (project) {
+            const newMode = project.mode === "edit" ? "run" : "edit";
+            state.updateProject(id, { mode: newMode });
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <div className="flex h-screen bg-background">
       <Toaster position="top-right" />
