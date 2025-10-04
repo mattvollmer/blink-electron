@@ -47,10 +47,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
     setIsLoading(true);
 
     try {
-      // Convert messages to the format expected by AI SDK CoreMessage
+      // Convert messages to the format expected by Blink runtime
       const formattedMessages = [...messages, userMessage].map(msg => ({
         role: msg.role,
-        content: [
+        parts: [
           {
             type: 'text',
             text: msg.content,
