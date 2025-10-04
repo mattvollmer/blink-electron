@@ -347,19 +347,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
             return (
               <div
                 key={message.id}
-                className={`flex gap-2 items-start ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                className={`flex flex-col ${
+                  message.role === 'user' ? 'items-end' : 'items-start'
                 }`}
               >
-                {message.role === 'assistant' && (
-                  <button
-                    onClick={() => handleCopy(message.content)}
-                    className="mt-2 p-1 text-muted-foreground hover:text-foreground rounded"
-                    title="Copy message"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
-                )}
                 <div
                   className={`max-w-[75%] rounded-lg p-3 ${
                     message.role === 'user'
@@ -426,7 +417,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ project }) => {
                   )}
                   </div>
                 </div>
-                {message.role === 'user' && (
+                {message.role === 'user' ? (
+                  <button
+                    onClick={() => handleCopy(message.content)}
+                    className="mt-2 p-1 text-muted-foreground hover:text-foreground rounded"
+                    title="Copy message"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                ) : (
                   <button
                     onClick={() => handleCopy(message.content)}
                     className="mt-2 p-1 text-muted-foreground hover:text-foreground rounded"
